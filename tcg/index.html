@@ -50,12 +50,13 @@
   .column.drop-full { outline: 2px solid #e94560; }
   .col-cards {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
     min-height: 54px;
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
   }
-  .col-cards .card + .card { margin-left: -18px; }
   .col-head {
     margin: auto 0;
     text-align: center;
@@ -110,10 +111,10 @@
   .card.face-up.min-yellow { background: #fff3cd; border-color: #d4a017; }
   .card.face-up.min-blue { background: #cfe2ff; border-color: #4a7bff; }
   /* column cards (compact, overlapping) */
-  .col-cards .card { width: 36px; height: 50px; }
-  .col-cards .card .cname { font-size: 5px; }
-  .col-cards .card .cost { top: 9px; width: 13px; height: 13px; font-size: 8px; left: 2px; }
-  .col-cards .card .power { font-size: 14px; }
+  .col-cards .card { width: 46px; height: 64px; }
+  .col-cards .card .cname { font-size: 6px; }
+  .col-cards .card .cost { top: 11px; width: 15px; height: 15px; font-size: 9px; left: 3px; }
+  .col-cards .card .power { font-size: 16px; }
   .col-cards .card.face-up { cursor: default; }
   .col-cards .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
   .col-cards .card.opp .power { color: #bbb; }
@@ -175,7 +176,21 @@
   #result-title.win { color: #8fd694; }
   #result-title.lose { color: #f0a0a0; }
   #result-title.draw { color: #ccc; }
-  #result-sub { font-size: 1.1rem; opacity: 0.8; }
+  #result-sub { font-size: 1rem; width: 100%; max-width: 300px; }
+  #result-sub .mrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  #result-sub .mrow b.you { color: #8fd694; }
+  #result-sub .mrow b.opp { color: #f0a0a0; }
+  #result-sub .mrow .mark { width: 1.5em; text-align: right; font-weight: 800; }
+  #result-sub .mrow .mark.you { color: #8fd694; }
+  #result-sub .mrow .mark.opp { color: #f0a0a0; }
+  #result-sub .mrow .mark.tie { color: #888; }
+  #result-sub .tnote { font-size: 0.8rem; opacity: 0.6; margin-top: 0.6rem; }
   #new-game {
     font-size: 1.2rem;
     font-weight: 700;
@@ -375,18 +390,22 @@
 
     function computeResult() {
       var you = 0, opp = 0, youPower = 0, oppPower = 0;
+      var detail = [];
       for (var m = 0; m < MINISTRIES.length; m++) {
         var yp = ministryPower(playerBoard, m);
         var op = ministryPower(oppBoard, m);
         youPower += yp; oppPower += op;
-        if (yp > op) you++;
-        else if (op > yp) opp++;
+        var w = yp > op ? 'you' : op > yp ? 'opp' : 'tie';
+        if (w === 'you') you++;
+        else if (w === 'opp') opp++;
+        detail.push({ name: MINISTRIES[m].name, you: yp, opp: op, winner: w });
       }
-      if (you > opp) return { winner: 'you', you: you, opp: opp };
-      if (opp > you) return { winner: 'opp', you: you, opp: opp };
-      if (youPower > oppPower) return { winner: 'you', you: you, opp: opp, tiebreak: true };
-      if (oppPower > youPower) return { winner: 'opp', you: you, opp: opp, tiebreak: true };
-      return { winner: 'draw', you: you, opp: opp };
+      var base = { you: you, opp: opp, detail: detail };
+      if (you > opp) return Object.assign({ winner: 'you' }, base);
+      if (opp > you) return Object.assign({ winner: 'opp' }, base);
+      if (youPower > oppPower) return Object.assign({ winner: 'you', tiebreak: true }, base);
+      if (oppPower > youPower) return Object.assign({ winner: 'opp', tiebreak: true }, base);
+      return Object.assign({ winner: 'draw' }, base);
     }
 
     function showResult() {
@@ -403,8 +422,32 @@
         title.textContent = 'Draw';
         title.className = 'draw';
       }
-      sub.textContent = 'Ministries ' + r.you + ' \u2013 ' + r.opp +
-        (r.tiebreak ? ' (total power tiebreak)' : '');
+      sub.innerHTML = '';
+      r.detail.forEach(function (d) {
+        var row = document.createElement('div');
+        row.className = 'mrow';
+        var nm = document.createElement('span');
+        nm.textContent = d.name;
+        var sc = document.createElement('span');
+        var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = d.you;
+        var ob = document.createElement('b'); ob.className = 'opp'; ob.textContent = d.opp;
+        sc.appendChild(yb);
+        sc.appendChild(document.createTextNode(' \u2013 '));
+        sc.appendChild(ob);
+        var mark = document.createElement('span');
+        mark.className = 'mark ' + d.winner;
+        mark.textContent = d.winner === 'you' ? '\u2713' : d.winner === 'opp' ? '\u2717' : '=';
+        row.appendChild(nm);
+        row.appendChild(sc);
+        row.appendChild(mark);
+        sub.appendChild(row);
+      });
+      if (r.tiebreak) {
+        var note = document.createElement('div');
+        note.className = 'tnote';
+        note.textContent = 'Decided by total power';
+        sub.appendChild(note);
+      }
       document.getElementById('result-banner').classList.remove('hidden');
     }
 
