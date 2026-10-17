@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TCG Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  main { text-align: center; padding: 2rem; }
+  h1 { font-size: 1.25rem; font-weight: 600; opacity: 0.6; margin-bottom: 2rem; }
+  #turn-counter { font-size: 3rem; font-weight: 700; margin-bottom: 2.5rem; }
+  #end-turn {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 999px;
+    background: #e94560;
+    color: #fff;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #end-turn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+  <main>
+    <h1>TCG &mdash; alpha prototype</h1>
+    <p id="turn-counter">Turn 1 of 6</p>
+    <button id="end-turn" type="button">End Turn</button>
+  </main>
+<script>
+  (function () {
+    var MAX_TURNS = 6;
+    var turn = 1;
+    var gameOver = false;
+    var counter = document.getElementById('turn-counter');
+    var button = document.getElementById('end-turn');
+
+    function render() {
+      if (gameOver) {
+        counter.textContent = 'Game over';
+        button.textContent = 'New Game';
+      } else {
+        counter.textContent = 'Turn ' + turn + ' of ' + MAX_TURNS;
+        button.textContent = (turn === MAX_TURNS) ? 'Finish Game' : 'End Turn';
+      }
+    }
+
+    button.addEventListener('click', function () {
+      if (gameOver) {
+        turn = 1;
+        gameOver = false;
+      } else if (turn >= MAX_TURNS) {
+        gameOver = true;
+      } else {
+        turn += 1;
+      }
+      render();
+    });
+
+    render();
+  })();
+</script>
+</body>
+</html>
