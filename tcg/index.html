@@ -15,39 +15,68 @@
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
-    padding: 1rem;
+    padding: 0.75rem;
+    -webkit-touch-callout: none;
   }
-  .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.5rem; }
+  .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
+  .ministry { margin-bottom: 0.5rem; }
+  .ministry-name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+    margin-bottom: 0.25rem;
+  }
+  .slots { display: flex; gap: 6px; }
+  .slot {
+    width: 50px;
+    height: 70px;
+    border-radius: 8px;
+    border: 2px dashed #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
+  .card {
+    width: 50px;
+    height: 70px;
+    border-radius: 8px;
+    border: 2px solid #888;
+    flex: 0 0 auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .card.face-up { background: #f0e6d2; cursor: grab; }
+  .card.opp { background: #3a3a5e; border-color: #555; }
+  .card.drag-ghost {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(1.08);
+    margin: 0;
+  }
   .hand {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    min-height: 82px;
+    min-height: 76px;
     align-content: flex-start;
   }
-  .card {
-    width: 54px;
-    height: 76px;
-    border-radius: 8px;
-    border: 2px solid #888;
-    flex: 0 0 auto;
-  }
-  .card.face-up { background: #f0e6d2; }
-  .card.face-down { background: #2e2e4e; border-color: #555; }
   #table {
-    flex: 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.25rem;
-    padding: 1rem 0;
+    gap: 1rem;
+    padding: 0.9rem 0;
   }
-  #turn-counter { font-size: 2rem; font-weight: 700; }
+  #turn-counter { font-size: 1.4rem; font-weight: 700; }
   #end-turn {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    padding: 1rem 3rem;
+    padding: 0.8rem 2rem;
     border: none;
     border-radius: 999px;
     background: #e94560;
@@ -58,12 +87,12 @@
   }
   #end-turn:active { transform: scale(0.97); }
   #player-zone { margin-top: auto; }
+  .board-side { margin-bottom: 0.25rem; }
 </style>
 </head>
-<body>
-  <section id="opponent-zone">
+<body oncontextmenu="return false">
+  <section class="board-side" id="opp-board">
     <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
-    <div class="hand" id="opp-hand"></div>
   </section>
 
   <section id="table">
@@ -71,8 +100,10 @@
     <button id="end-turn" type="button">End Turn</button>
   </section>
 
+  <section class="board-side" id="player-board"></section>
+
   <section id="player-zone">
-    <div class="zone-label">You &middot; <span id="player-deck-count"></span></div>
+    <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
     <div class="hand" id="player-hand"></div>
   </section>
 
@@ -81,9 +112,12 @@
     var MAX_TURNS = 6;
     var STARTING_HAND = 4;
     var DECK_SIZE = 15;
+    var MINISTRIES = ['War', 'Coin', 'Whispers'];
+    var SLOTS = 3;
 
     var turn, gameOver;
     var playerDeck, playerHand, oppDeck, oppHand;
+    var playerBoard, oppBoard; // [ministry][slot] -> card or null
 
     function newDeck() {
       var d = [];
@@ -95,16 +129,66 @@
       return d;
     }
 
+    function emptyBoard() {
+      var b = [];
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        var row = [];
+        for (var s = 0; s < SLOTS; s++) row.push(null);
+        b.push(row);
+      }
+      return b;
+    }
+
     function draw(deck, hand) {
       if (deck.length > 0) hand.push(deck.pop());
     }
 
-    function renderHand(elId, hand, faceUp) {
-      var el = document.getElementById(elId);
+    function cardEl(card, cls) {
+      var c = document.createElement('div');
+      c.className = 'card ' + cls;
+      c.dataset.cardId = card.id;
+      return c;
+    }
+
+    function renderBoard(containerId, board, ownSide) {
+      var container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (ownSide) {
+        var label = document.createElement('div');
+        label.className = 'zone-label';
+        label.textContent = 'Your ministries';
+        container.appendChild(label);
+      }
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        var min = document.createElement('div');
+        min.className = 'ministry';
+        var name = document.createElement('div');
+        name.className = 'ministry-name';
+        name.textContent = MINISTRIES[m];
+        min.appendChild(name);
+        var slots = document.createElement('div');
+        slots.className = 'slots';
+        for (var s = 0; s < SLOTS; s++) {
+          var slot = document.createElement('div');
+          slot.className = 'slot';
+          slot.dataset.ministry = m;
+          slot.dataset.slot = s;
+          slot.dataset.side = ownSide ? 'player' : 'opp';
+          var card = board[m][s];
+          if (card) slot.appendChild(cardEl(card, ownSide ? 'face-up' : 'opp'));
+          slots.appendChild(slot);
+        }
+        min.appendChild(slots);
+        container.appendChild(min);
+      }
+    }
+
+    function renderHand() {
+      var el = document.getElementById('player-hand');
       el.innerHTML = '';
-      hand.forEach(function () {
-        var c = document.createElement('div');
-        c.className = 'card ' + (faceUp ? 'face-up' : 'face-down');
+      playerHand.forEach(function (card, i) {
+        var c = cardEl(card, 'face-up');
+        c.dataset.handIndex = i;
         el.appendChild(c);
       });
     }
@@ -114,8 +198,9 @@
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
       document.getElementById('end-turn').textContent =
         gameOver ? 'New Game' : (turn === MAX_TURNS ? 'Finish Game' : 'End Turn');
-      renderHand('player-hand', playerHand, true);
-      renderHand('opp-hand', oppHand, false);
+      renderBoard('opp-board', oppBoard, false);
+      renderBoard('player-board', playerBoard, true);
+      renderHand();
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
     }
@@ -125,6 +210,8 @@
       gameOver = false;
       playerDeck = newDeck(); playerHand = [];
       oppDeck = newDeck(); oppHand = [];
+      playerBoard = emptyBoard();
+      oppBoard = emptyBoard();
       for (var i = 0; i < STARTING_HAND; i++) {
         draw(playerDeck, playerHand);
         draw(oppDeck, oppHand);
@@ -132,11 +219,99 @@
       render();
     }
 
+    function opponentPlay() {
+      if (oppHand.length === 0) return;
+      var empty = [];
+      for (var m = 0; m < MINISTRIES.length; m++)
+        for (var s = 0; s < SLOTS; s++)
+          if (!oppBoard[m][s]) empty.push([m, s]);
+      if (empty.length === 0) return;
+      var card = oppHand.splice(Math.floor(Math.random() * oppHand.length), 1)[0];
+      var spot = empty[Math.floor(Math.random() * empty.length)];
+      oppBoard[spot[0]][spot[1]] = card;
+    }
+
+    // ---- drag & drop (pointer events: touch + mouse) ----
+    var drag = null; // {ghost, card, from:{type:'hand',index} | {type:'board',m,s}}
+
+    function clearHighlights() {
+      document.querySelectorAll('.slot.drop-ok').forEach(function (el) {
+        el.classList.remove('drop-ok');
+      });
+    }
+
+    document.addEventListener('pointerdown', function (e) {
+      if (gameOver) return;
+      var t = e.target.closest('.card.face-up');
+      if (!t || !document.getElementById('player-board').contains(t) &&
+          !document.getElementById('player-hand').contains(t)) return;
+      // only player-owned cards are draggable
+      var inHand = document.getElementById('player-hand').contains(t);
+      var inBoard = document.getElementById('player-board').contains(t);
+      if (!inHand && !inBoard) return;
+
+      var from;
+      if (inHand) {
+        from = { type: 'hand', index: parseInt(t.dataset.handIndex, 10) };
+      } else {
+        var slot = t.closest('.slot');
+        from = { type: 'board', m: parseInt(slot.dataset.ministry, 10), s: parseInt(slot.dataset.slot, 10) };
+      }
+      var card = from.type === 'hand' ? playerHand[from.index] : playerBoard[from.m][from.s];
+
+      var ghost = t.cloneNode(false);
+      ghost.classList.add('drag-ghost');
+      ghost.style.left = e.clientX + 'px';
+      ghost.style.top = e.clientY + 'px';
+      document.body.appendChild(ghost);
+
+      drag = { ghost: ghost, card: card, from: from, x: e.clientX, y: e.clientY };
+      e.preventDefault();
+    });
+
+    document.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      drag.x = e.clientX; drag.y = e.clientY;
+      drag.ghost.style.left = e.clientX + 'px';
+      drag.ghost.style.top = e.clientY + 'px';
+      clearHighlights();
+      drag.ghost.style.display = 'none';
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      drag.ghost.style.display = '';
+      var slot = under && under.closest ? under.closest('.slot') : null;
+      if (slot && slot.dataset.side === 'player' && !slot.firstChild) {
+        slot.classList.add('drop-ok');
+        drag.target = slot;
+      } else {
+        drag.target = null;
+      }
+    });
+
+    function endDrag(commit) {
+      if (!drag) return;
+      if (commit && drag.target) {
+        var m = parseInt(drag.target.dataset.ministry, 10);
+        var s = parseInt(drag.target.dataset.slot, 10);
+        // remove from source
+        if (drag.from.type === 'hand') playerHand.splice(drag.from.index, 1);
+        else playerBoard[drag.from.m][drag.from.s] = null;
+        playerBoard[m][s] = drag.card;
+      }
+      drag.ghost.remove();
+      drag = null;
+      clearHighlights();
+      render();
+    }
+
+    document.addEventListener('pointerup', function () { endDrag(true); });
+    document.addEventListener('pointercancel', function () { endDrag(false); });
+
     document.getElementById('end-turn').addEventListener('click', function () {
       if (gameOver) {
         newGame();
         return;
       }
+      opponentPlay();
       if (turn >= MAX_TURNS) {
         gameOver = true;
       } else {
