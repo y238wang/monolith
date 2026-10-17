@@ -20,13 +20,22 @@
   }
   .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
   .ministry { margin-bottom: 0.5rem; }
-  .ministry-name {
-    font-size: 0.7rem;
+  .ministry-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.5;
+    letter-spacing: 0.08em;
     margin-bottom: 0.25rem;
+    padding-left: 0.4rem;
+    border-left: 3px solid #555;
   }
+  .ministry-head.lead-you { border-left-color: #4caf50; }
+  .ministry-head.lead-opp { border-left-color: #e94560; }
+  .ministry-head .tally { margin-left: auto; font-size: 0.8rem; opacity: 0.85; text-transform: none; letter-spacing: 0; }
+  .ministry-head .tally b.you { color: #8fd694; }
+  .ministry-head .tally b.opp { color: #f0a0a0; }
   .slots { display: flex; gap: 6px; }
   .slot {
     width: 50px;
@@ -47,9 +56,32 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    position: relative;
+    font-size: 9px;
   }
-  .card.face-up { background: #f0e6d2; cursor: grab; }
+  .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
+  .card.face-up .cname {
+    position: absolute; top: 2px; left: 0; right: 0;
+    text-align: center; font-weight: 700; font-size: 7px;
+    padding: 0 2px; white-space: nowrap; overflow: hidden;
+  }
+  .card.face-up .cost {
+    position: absolute; top: 12px; left: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #d4a017; color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card.face-up .power {
+    position: absolute; bottom: 2px; left: 0; right: 0;
+    text-align: center; font-size: 20px; font-weight: 800;
+  }
+  .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
   .card.opp { background: #3a3a5e; border-color: #555; }
+  .card.opp .power {
+    position: absolute; bottom: 2px; left: 0; right: 0;
+    text-align: center; font-size: 20px; font-weight: 800; color: #bbb;
+  }
   .card.drag-ghost {
     position: fixed;
     z-index: 1000;
@@ -65,14 +97,17 @@
     min-height: 76px;
     align-content: flex-start;
   }
+  #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
+  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; }
   #table {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    padding: 0.9rem 0;
+    padding: 0.7rem 0;
   }
-  #turn-counter { font-size: 1.4rem; font-weight: 700; }
+  #turn-counter { font-size: 1.3rem; font-weight: 700; }
+  #coins { font-size: 1rem; font-weight: 600; color: #ffd75e; }
   #end-turn {
     font-size: 1.1rem;
     font-weight: 600;
@@ -88,15 +123,32 @@
   #end-turn:active { transform: scale(0.97); }
   #player-zone { margin-top: auto; }
   .board-side { margin-bottom: 0.25rem; }
+  #result-banner {
+    position: fixed; inset: 0;
+    background: rgba(10, 10, 20, 0.85);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.75rem; z-index: 2000;
+  }
+  #result-banner.hidden { display: none; }
+  #result-title { font-size: 2.5rem; font-weight: 800; }
+  #result-title.win { color: #8fd694; }
+  #result-title.lose { color: #f0a0a0; }
+  #result-title.draw { color: #ccc; }
+  #result-sub { font-size: 1.1rem; opacity: 0.8; }
 </style>
 </head>
 <body oncontextmenu="return false">
   <section class="board-side" id="opp-board">
     <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
+    <div id="opp-hand-strip"></div>
   </section>
 
   <section id="table">
-    <p id="turn-counter">Turn 1 of 6</p>
+    <div>
+      <p id="turn-counter">Turn 1 of 6</p>
+      <p id="coins"></p>
+    </div>
     <button id="end-turn" type="button">End Turn</button>
   </section>
 
@@ -107,24 +159,42 @@
     <div class="hand" id="player-hand"></div>
   </section>
 
+  <div id="result-banner" class="hidden">
+    <div id="result-title"></div>
+    <div id="result-sub"></div>
+  </div>
+
 <script>
   (function () {
     var MAX_TURNS = 6;
     var STARTING_HAND = 4;
-    var DECK_SIZE = 15;
     var MINISTRIES = ['War', 'Coin', 'Whispers'];
     var SLOTS = 3;
 
-    var turn, gameOver;
-    var playerDeck, playerHand, oppDeck, oppHand;
-    var playerBoard, oppBoard; // [ministry][slot] -> card or null
+    var STARTER = [
+      { name: 'Conscript',   cost: 1, power: 2,  count: 3 },
+      { name: 'Soldier',     cost: 2, power: 4,  count: 3 },
+      { name: 'Veteran',      cost: 3, power: 6,  count: 3 },
+      { name: 'Elite Guard', cost: 4, power: 9,  count: 2 },
+      { name: 'General',      cost: 5, power: 11, count: 2 },
+      { name: 'Warlord',      cost: 6, power: 14, count: 2 }
+    ];
 
-    function newDeck() {
+    var turn, gameOver, playerCoins;
+    var playerDeck, playerHand, oppDeck, oppHand;
+    var playerBoard, oppBoard;
+    var nextId = 1;
+
+    function buildDeck() {
       var d = [];
-      for (var i = 0; i < DECK_SIZE; i++) d.push({ id: i });
+      STARTER.forEach(function (t) {
+        for (var i = 0; i < t.count; i++) {
+          d.push({ id: nextId++, name: t.name, cost: t.cost, power: t.power });
+        }
+      });
       for (var j = d.length - 1; j > 0; j--) {
         var k = Math.floor(Math.random() * (j + 1));
-        var t = d[j]; d[j] = d[k]; d[k] = t;
+        var tmp = d[j]; d[j] = d[k]; d[k] = tmp;
       }
       return d;
     }
@@ -143,10 +213,38 @@
       if (deck.length > 0) hand.push(deck.pop());
     }
 
+    function ministryPower(board, m) {
+      var t = 0;
+      for (var s = 0; s < SLOTS; s++) if (board[m][s]) t += board[m][s].power;
+      return t;
+    }
+
     function cardEl(card, cls) {
       var c = document.createElement('div');
       c.className = 'card ' + cls;
       c.dataset.cardId = card.id;
+      var name = document.createElement('div');
+      name.className = 'cname';
+      name.textContent = card.name;
+      var cost = document.createElement('div');
+      cost.className = 'cost';
+      cost.textContent = card.cost;
+      var power = document.createElement('div');
+      power.className = 'power';
+      power.textContent = card.power;
+      c.appendChild(name);
+      c.appendChild(cost);
+      c.appendChild(power);
+      return c;
+    }
+
+    function oppCardEl(card) {
+      var c = document.createElement('div');
+      c.className = 'card opp';
+      var power = document.createElement('div');
+      power.className = 'power';
+      power.textContent = card.power;
+      c.appendChild(power);
       return c;
     }
 
@@ -160,12 +258,25 @@
         container.appendChild(label);
       }
       for (var m = 0; m < MINISTRIES.length; m++) {
+        var yp = ministryPower(playerBoard, m);
+        var op = ministryPower(oppBoard, m);
         var min = document.createElement('div');
         min.className = 'ministry';
-        var name = document.createElement('div');
-        name.className = 'ministry-name';
-        name.textContent = MINISTRIES[m];
-        min.appendChild(name);
+        var head = document.createElement('div');
+        head.className = 'ministry-head' +
+          (yp > op ? ' lead-you' : op > yp ? ' lead-opp' : '');
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = MINISTRIES[m];
+        var tally = document.createElement('span');
+        tally.className = 'tally';
+        var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = yp;
+        var ob = document.createElement('b'); ob.className = 'opp'; ob.textContent = op;
+        tally.appendChild(yb);
+        tally.appendChild(document.createTextNode(' \u2013 '));
+        tally.appendChild(ob);
+        head.appendChild(nameSpan);
+        head.appendChild(tally);
+        min.appendChild(head);
         var slots = document.createElement('div');
         slots.className = 'slots';
         for (var s = 0; s < SLOTS; s++) {
@@ -175,7 +286,7 @@
           slot.dataset.slot = s;
           slot.dataset.side = ownSide ? 'player' : 'opp';
           var card = board[m][s];
-          if (card) slot.appendChild(cardEl(card, ownSide ? 'face-up' : 'opp'));
+          if (card) slot.appendChild(ownSide ? cardEl(card, 'face-up') : oppCardEl(card));
           slots.appendChild(slot);
         }
         min.appendChild(slots);
@@ -187,15 +298,23 @@
       var el = document.getElementById('player-hand');
       el.innerHTML = '';
       playerHand.forEach(function (card, i) {
-        var c = cardEl(card, 'face-up');
+        var c = cardEl(card, 'face-up' + (card.cost > playerCoins ? ' cant-afford' : ''));
         c.dataset.handIndex = i;
         el.appendChild(c);
+      });
+      var strip = document.getElementById('opp-hand-strip');
+      strip.innerHTML = '';
+      oppHand.forEach(function () {
+        var c = document.createElement('div');
+        c.className = 'card opp';
+        strip.appendChild(c);
       });
     }
 
     function render() {
       document.getElementById('turn-counter').textContent =
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
+      document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
       document.getElementById('end-turn').textContent =
         gameOver ? 'New Game' : (turn === MAX_TURNS ? 'Finish Game' : 'End Turn');
       renderBoard('opp-board', oppBoard, false);
@@ -205,34 +324,78 @@
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
     }
 
+    function computeResult() {
+      var you = 0, opp = 0, youPower = 0, oppPower = 0;
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        var yp = ministryPower(playerBoard, m);
+        var op = ministryPower(oppBoard, m);
+        youPower += yp; oppPower += op;
+        if (yp > op) you++;
+        else if (op > yp) opp++;
+      }
+      if (you > opp) return { winner: 'you', you: you, opp: opp };
+      if (opp > you) return { winner: 'opp', you: you, opp: opp };
+      if (youPower > oppPower) return { winner: 'you', you: you, opp: opp, tiebreak: true };
+      if (oppPower > youPower) return { winner: 'opp', you: you, opp: opp, tiebreak: true };
+      return { winner: 'draw', you: you, opp: opp };
+    }
+
+    function showResult() {
+      var r = computeResult();
+      var title = document.getElementById('result-title');
+      var sub = document.getElementById('result-sub');
+      if (r.winner === 'you') {
+        title.textContent = 'Victory!';
+        title.className = 'win';
+      } else if (r.winner === 'opp') {
+        title.textContent = 'Defeat';
+        title.className = 'lose';
+      } else {
+        title.textContent = 'Draw';
+        title.className = 'draw';
+      }
+      sub.textContent = 'Ministries ' + r.you + ' \u2013 ' + r.opp +
+        (r.tiebreak ? ' (total power tiebreak)' : '');
+      document.getElementById('result-banner').classList.remove('hidden');
+    }
+
     function newGame() {
       turn = 1;
       gameOver = false;
-      playerDeck = newDeck(); playerHand = [];
-      oppDeck = newDeck(); oppHand = [];
+      playerCoins = 1; // turn-number income, no carryover
+      playerDeck = buildDeck(); playerHand = [];
+      oppDeck = buildDeck(); oppHand = [];
       playerBoard = emptyBoard();
       oppBoard = emptyBoard();
       for (var i = 0; i < STARTING_HAND; i++) {
         draw(playerDeck, playerHand);
         draw(oppDeck, oppHand);
       }
+      document.getElementById('result-banner').classList.add('hidden');
       render();
     }
 
     function opponentPlay() {
-      if (oppHand.length === 0) return;
-      var empty = [];
-      for (var m = 0; m < MINISTRIES.length; m++)
-        for (var s = 0; s < SLOTS; s++)
-          if (!oppBoard[m][s]) empty.push([m, s]);
-      if (empty.length === 0) return;
-      var card = oppHand.splice(Math.floor(Math.random() * oppHand.length), 1)[0];
-      var spot = empty[Math.floor(Math.random() * empty.length)];
-      oppBoard[spot[0]][spot[1]] = card;
+      var coins = turn; // same income rule as the player
+      while (true) {
+        var empty = [];
+        for (var m = 0; m < MINISTRIES.length; m++)
+          for (var s = 0; s < SLOTS; s++)
+            if (!oppBoard[m][s]) empty.push([m, s]);
+        if (empty.length === 0) break;
+        var affordable = oppHand.filter(function (c) { return c.cost <= coins; });
+        if (affordable.length === 0) break;
+        affordable.sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
+        var card = affordable[0];
+        oppHand.splice(oppHand.indexOf(card), 1);
+        coins -= card.cost;
+        var spot = empty[Math.floor(Math.random() * empty.length)];
+        oppBoard[spot[0]][spot[1]] = card;
+      }
     }
 
     // ---- drag & drop (pointer events: touch + mouse) ----
-    var drag = null; // {ghost, card, from:{type:'hand',index} | {type:'board',m,s}}
+    var drag = null;
 
     function clearHighlights() {
       document.querySelectorAll('.slot.drop-ok').forEach(function (el) {
@@ -243,35 +406,34 @@
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
       var t = e.target.closest('.card.face-up');
-      if (!t || !document.getElementById('player-board').contains(t) &&
-          !document.getElementById('player-hand').contains(t)) return;
-      // only player-owned cards are draggable
-      var inHand = document.getElementById('player-hand').contains(t);
-      var inBoard = document.getElementById('player-board').contains(t);
-      if (!inHand && !inBoard) return;
-
-      var from;
-      if (inHand) {
+      if (!t) return;
+      if (t.classList.contains('cant-afford')) return;
+      var handEl = document.getElementById('player-hand');
+      var boardEl = document.getElementById('player-board');
+      var from = null;
+      if (handEl.contains(t)) {
         from = { type: 'hand', index: parseInt(t.dataset.handIndex, 10) };
-      } else {
+      } else if (boardEl.contains(t)) {
         var slot = t.closest('.slot');
         from = { type: 'board', m: parseInt(slot.dataset.ministry, 10), s: parseInt(slot.dataset.slot, 10) };
+      } else {
+        return;
       }
       var card = from.type === 'hand' ? playerHand[from.index] : playerBoard[from.m][from.s];
+      if (from.type === 'hand' && card.cost > playerCoins) return;
 
-      var ghost = t.cloneNode(false);
+      var ghost = t.cloneNode(true);
       ghost.classList.add('drag-ghost');
       ghost.style.left = e.clientX + 'px';
       ghost.style.top = e.clientY + 'px';
       document.body.appendChild(ghost);
 
-      drag = { ghost: ghost, card: card, from: from, x: e.clientX, y: e.clientY };
+      drag = { ghost: ghost, card: card, from: from, target: null };
       e.preventDefault();
     });
 
     document.addEventListener('pointermove', function (e) {
       if (!drag) return;
-      drag.x = e.clientX; drag.y = e.clientY;
       drag.ghost.style.left = e.clientX + 'px';
       drag.ghost.style.top = e.clientY + 'px';
       clearHighlights();
@@ -292,9 +454,12 @@
       if (commit && drag.target) {
         var m = parseInt(drag.target.dataset.ministry, 10);
         var s = parseInt(drag.target.dataset.slot, 10);
-        // remove from source
-        if (drag.from.type === 'hand') playerHand.splice(drag.from.index, 1);
-        else playerBoard[drag.from.m][drag.from.s] = null;
+        if (drag.from.type === 'hand') {
+          playerHand.splice(drag.from.index, 1);
+          playerCoins -= drag.card.cost;
+        } else {
+          playerBoard[drag.from.m][drag.from.s] = null;
+        }
         playerBoard[m][s] = drag.card;
       }
       drag.ghost.remove();
@@ -314,12 +479,15 @@
       opponentPlay();
       if (turn >= MAX_TURNS) {
         gameOver = true;
+        render();
+        showResult();
       } else {
         turn += 1;
+        playerCoins = turn; // income = turn number, no carryover
         draw(playerDeck, playerHand);
         draw(oppDeck, oppHand);
+        render();
       }
-      render();
     });
 
     newGame();
