@@ -19,69 +19,89 @@
     -webkit-touch-callout: none;
   }
   .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
-  .ministry { margin-bottom: 0.5rem; }
-  .ministry-head {
+
+  /* ---- ministries as columns ---- */
+  #board {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.25rem;
-    padding-left: 0.4rem;
-    border-left: 3px solid #555;
+    gap: 8px;
   }
-  .ministry-head.lead-you { border-left-color: #4caf50; }
-  .ministry-head.lead-opp { border-left-color: #e94560; }
-  .ministry-head .tally { margin-left: auto; font-size: 0.8rem; opacity: 0.85; text-transform: none; letter-spacing: 0; }
-  .ministry-head .tally b.you { color: #8fd694; }
-  .ministry-head .tally b.opp { color: #f0a0a0; }
-  .slots { display: flex; gap: 6px; }
-  .slot {
-    width: 50px;
-    height: 70px;
-    border-radius: 8px;
-    border: 2px dashed #444;
+  .column {
+    flex: 1;
+    min-width: 0;
+    background: #22223a;
+    border-radius: 10px;
+    padding: 6px 4px;
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .column.drop-ok { outline: 2px solid #4caf50; background: #243024; }
+  .column.drop-full { outline: 2px solid #e94560; }
+  .col-cards {
+    display: flex;
+    gap: 4px;
+    min-height: 56px;
     align-items: center;
     justify-content: center;
+    flex-wrap: nowrap;
   }
-  .slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
+  .col-head {
+    text-align: center;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 2px;
+    border-top: 2px solid #555;
+    border-bottom: 2px solid #555;
+    opacity: 0.9;
+  }
+  .col-head.lead-you { border-top-color: #4caf50; border-bottom-color: #4caf50; }
+  .col-head.lead-opp { border-top-color: #e94560; border-bottom-color: #e94560; }
+  .col-head .tally { display: block; font-size: 0.8rem; margin-top: 2px; text-transform: none; letter-spacing: 0; }
+  .col-head .tally b.you { color: #8fd694; }
+  .col-head .tally b.opp { color: #f0a0a0; }
+
+  /* ---- cards ---- */
   .card {
-    width: 50px;
-    height: 70px;
-    border-radius: 8px;
+    border-radius: 7px;
     border: 2px solid #888;
     flex: 0 0 auto;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     position: relative;
-    font-size: 9px;
   }
-  .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
-  .card.face-up .cname {
+  .card .cname {
     position: absolute; top: 2px; left: 0; right: 0;
-    text-align: center; font-weight: 700; font-size: 7px;
+    text-align: center; font-weight: 700;
     padding: 0 2px; white-space: nowrap; overflow: hidden;
   }
-  .card.face-up .cost {
-    position: absolute; top: 12px; left: 4px;
-    width: 18px; height: 18px; border-radius: 50%;
+  .card .cost {
+    position: absolute; left: 3px;
+    border-radius: 50%;
     background: #d4a017; color: #fff;
-    font-size: 11px; font-weight: 700;
+    font-weight: 700;
     display: flex; align-items: center; justify-content: center;
   }
-  .card.face-up .power {
-    position: absolute; bottom: 2px; left: 0; right: 0;
-    text-align: center; font-size: 20px; font-weight: 800;
+  .card .power {
+    position: absolute; bottom: 1px; left: 0; right: 0;
+    text-align: center; font-weight: 800;
   }
+  /* hand cards (large) */
+  .hand .card { width: 56px; height: 78px; font-size: 9px; }
+  .hand .card .cname { font-size: 7px; }
+  .hand .card .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
+  .hand .card .power { font-size: 20px; }
+  .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
   .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
-  .card.opp { background: #3a3a5e; border-color: #555; }
-  .card.opp .power {
-    position: absolute; bottom: 2px; left: 0; right: 0;
-    text-align: center; font-size: 20px; font-weight: 800; color: #bbb;
-  }
+  /* column cards (compact) */
+  .col-cards .card { width: 38px; height: 54px; }
+  .col-cards .card .cname { font-size: 6px; }
+  .col-cards .card .cost { top: 10px; width: 14px; height: 14px; font-size: 9px; }
+  .col-cards .card .power { font-size: 15px; }
+  .col-cards .card.face-up { cursor: default; }
+  .col-cards .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
+  .col-cards .card.opp .power { color: #bbb; }
   .card.drag-ghost {
     position: fixed;
     z-index: 1000;
@@ -90,15 +110,17 @@
     transform: translate(-50%, -50%) scale(1.08);
     margin: 0;
   }
+
   .hand {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    min-height: 76px;
+    min-height: 84px;
     align-content: flex-start;
   }
   #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
-  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; }
+  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border-color: #555; }
+
   #table {
     display: flex;
     align-items: center;
@@ -122,7 +144,7 @@
   }
   #end-turn:active { transform: scale(0.97); }
   #player-zone { margin-top: auto; }
-  .board-side { margin-bottom: 0.25rem; }
+
   #result-banner {
     position: fixed; inset: 0;
     background: rgba(10, 10, 20, 0.85);
@@ -139,10 +161,12 @@
 </style>
 </head>
 <body oncontextmenu="return false">
-  <section class="board-side" id="opp-board">
+  <section id="opp-zone">
     <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
     <div id="opp-hand-strip"></div>
   </section>
+
+  <section id="board"></section>
 
   <section id="table">
     <div>
@@ -151,8 +175,6 @@
     </div>
     <button id="end-turn" type="button">End Turn</button>
   </section>
-
-  <section class="board-side" id="player-board"></section>
 
   <section id="player-zone">
     <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
@@ -168,8 +190,8 @@
   (function () {
     var MAX_TURNS = 6;
     var STARTING_HAND = 4;
-    var MINISTRIES = ['War', 'Coin', 'Whispers'];
-    var SLOTS = 3;
+    var MINISTRIES = ['Military', 'Treasury', 'Intel'];
+    var MAX_PER_MINISTRY = 3;
 
     var STARTER = [
       { name: 'Conscript',   cost: 1, power: 2,  count: 3 },
@@ -182,7 +204,7 @@
 
     var turn, gameOver, playerCoins;
     var playerDeck, playerHand, oppDeck, oppHand;
-    var playerBoard, oppBoard;
+    var playerBoard, oppBoard; // [ministry] -> array of cards (max 3)
     var nextId = 1;
 
     function buildDeck() {
@@ -199,23 +221,13 @@
       return d;
     }
 
-    function emptyBoard() {
-      var b = [];
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        var row = [];
-        for (var s = 0; s < SLOTS; s++) row.push(null);
-        b.push(row);
-      }
-      return b;
-    }
-
     function draw(deck, hand) {
       if (deck.length > 0) hand.push(deck.pop());
     }
 
     function ministryPower(board, m) {
       var t = 0;
-      for (var s = 0; s < SLOTS; s++) if (board[m][s]) t += board[m][s].power;
+      board[m].forEach(function (c) { t += c.power; });
       return t;
     }
 
@@ -248,25 +260,24 @@
       return c;
     }
 
-    function renderBoard(containerId, board, ownSide) {
-      var container = document.getElementById(containerId);
-      container.innerHTML = '';
-      if (ownSide) {
-        var label = document.createElement('div');
-        label.className = 'zone-label';
-        label.textContent = 'Your ministries';
-        container.appendChild(label);
-      }
+    function renderBoard() {
+      var board = document.getElementById('board');
+      board.innerHTML = '';
       for (var m = 0; m < MINISTRIES.length; m++) {
         var yp = ministryPower(playerBoard, m);
         var op = ministryPower(oppBoard, m);
-        var min = document.createElement('div');
-        min.className = 'ministry';
+        var col = document.createElement('div');
+        col.className = 'column';
+        col.dataset.ministry = m;
+
+        var oppRow = document.createElement('div');
+        oppRow.className = 'col-cards';
+        oppBoard[m].forEach(function (card) { oppRow.appendChild(oppCardEl(card)); });
+        col.appendChild(oppRow);
+
         var head = document.createElement('div');
-        head.className = 'ministry-head' +
-          (yp > op ? ' lead-you' : op > yp ? ' lead-opp' : '');
-        var nameSpan = document.createElement('span');
-        nameSpan.textContent = MINISTRIES[m];
+        head.className = 'col-head' + (yp > op ? ' lead-you' : op > yp ? ' lead-opp' : '');
+        head.textContent = MINISTRIES[m];
         var tally = document.createElement('span');
         tally.className = 'tally';
         var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = yp;
@@ -274,23 +285,15 @@
         tally.appendChild(yb);
         tally.appendChild(document.createTextNode(' \u2013 '));
         tally.appendChild(ob);
-        head.appendChild(nameSpan);
         head.appendChild(tally);
-        min.appendChild(head);
-        var slots = document.createElement('div');
-        slots.className = 'slots';
-        for (var s = 0; s < SLOTS; s++) {
-          var slot = document.createElement('div');
-          slot.className = 'slot';
-          slot.dataset.ministry = m;
-          slot.dataset.slot = s;
-          slot.dataset.side = ownSide ? 'player' : 'opp';
-          var card = board[m][s];
-          if (card) slot.appendChild(ownSide ? cardEl(card, 'face-up') : oppCardEl(card));
-          slots.appendChild(slot);
-        }
-        min.appendChild(slots);
-        container.appendChild(min);
+        col.appendChild(head);
+
+        var playerRow = document.createElement('div');
+        playerRow.className = 'col-cards';
+        playerBoard[m].forEach(function (card) { playerRow.appendChild(cardEl(card, 'face-up')); });
+        col.appendChild(playerRow);
+
+        board.appendChild(col);
       }
     }
 
@@ -306,7 +309,7 @@
       strip.innerHTML = '';
       oppHand.forEach(function () {
         var c = document.createElement('div');
-        c.className = 'card opp';
+        c.className = 'card';
         strip.appendChild(c);
       });
     }
@@ -317,8 +320,7 @@
       document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
       document.getElementById('end-turn').textContent =
         gameOver ? 'New Game' : (turn === MAX_TURNS ? 'Finish Game' : 'End Turn');
-      renderBoard('opp-board', oppBoard, false);
-      renderBoard('player-board', playerBoard, true);
+      renderBoard();
       renderHand();
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
@@ -365,8 +367,8 @@
       playerCoins = 1; // turn-number income, no carryover
       playerDeck = buildDeck(); playerHand = [];
       oppDeck = buildDeck(); oppHand = [];
-      playerBoard = emptyBoard();
-      oppBoard = emptyBoard();
+      playerBoard = [[], [], []];
+      oppBoard = [[], [], []];
       for (var i = 0; i < STARTING_HAND; i++) {
         draw(playerDeck, playerHand);
         draw(oppDeck, oppHand);
@@ -378,19 +380,18 @@
     function opponentPlay() {
       var coins = turn; // same income rule as the player
       while (true) {
-        var empty = [];
+        var openCols = [];
         for (var m = 0; m < MINISTRIES.length; m++)
-          for (var s = 0; s < SLOTS; s++)
-            if (!oppBoard[m][s]) empty.push([m, s]);
-        if (empty.length === 0) break;
+          if (oppBoard[m].length < MAX_PER_MINISTRY) openCols.push(m);
+        if (openCols.length === 0) break;
         var affordable = oppHand.filter(function (c) { return c.cost <= coins; });
         if (affordable.length === 0) break;
         affordable.sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
         var card = affordable[0];
         oppHand.splice(oppHand.indexOf(card), 1);
         coins -= card.cost;
-        var spot = empty[Math.floor(Math.random() * empty.length)];
-        oppBoard[spot[0]][spot[1]] = card;
+        var col = openCols[Math.floor(Math.random() * openCols.length)];
+        oppBoard[col].push(card);
       }
     }
 
@@ -398,29 +399,18 @@
     var drag = null;
 
     function clearHighlights() {
-      document.querySelectorAll('.slot.drop-ok').forEach(function (el) {
+      document.querySelectorAll('.column.drop-ok, .column.drop-full').forEach(function (el) {
         el.classList.remove('drop-ok');
+        el.classList.remove('drop-full');
       });
     }
 
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
-      var t = e.target.closest('.card.face-up');
-      if (!t) return;
-      if (t.classList.contains('cant-afford')) return;
-      var handEl = document.getElementById('player-hand');
-      var boardEl = document.getElementById('player-board');
-      var from = null;
-      if (handEl.contains(t)) {
-        from = { type: 'hand', index: parseInt(t.dataset.handIndex, 10) };
-      } else if (boardEl.contains(t)) {
-        var slot = t.closest('.slot');
-        from = { type: 'board', m: parseInt(slot.dataset.ministry, 10), s: parseInt(slot.dataset.slot, 10) };
-      } else {
-        return;
-      }
-      var card = from.type === 'hand' ? playerHand[from.index] : playerBoard[from.m][from.s];
-      if (from.type === 'hand' && card.cost > playerCoins) return;
+      var t = e.target.closest('#player-hand .card.face-up');
+      if (!t || t.classList.contains('cant-afford')) return;
+      var card = playerHand[parseInt(t.dataset.handIndex, 10)];
+      if (!card || card.cost > playerCoins) return;
 
       var ghost = t.cloneNode(true);
       ghost.classList.add('drag-ghost');
@@ -428,7 +418,7 @@
       ghost.style.top = e.clientY + 'px';
       document.body.appendChild(ghost);
 
-      drag = { ghost: ghost, card: card, from: from, target: null };
+      drag = { ghost: ghost, card: card, index: parseInt(t.dataset.handIndex, 10), target: null };
       e.preventDefault();
     });
 
@@ -440,10 +430,16 @@
       drag.ghost.style.display = 'none';
       var under = document.elementFromPoint(e.clientX, e.clientY);
       drag.ghost.style.display = '';
-      var slot = under && under.closest ? under.closest('.slot') : null;
-      if (slot && slot.dataset.side === 'player' && !slot.firstChild) {
-        slot.classList.add('drop-ok');
-        drag.target = slot;
+      var col = under && under.closest ? under.closest('.column') : null;
+      if (col) {
+        var m = parseInt(col.dataset.ministry, 10);
+        if (playerBoard[m].length < MAX_PER_MINISTRY) {
+          col.classList.add('drop-ok');
+          drag.target = m;
+        } else {
+          col.classList.add('drop-full');
+          drag.target = null;
+        }
       } else {
         drag.target = null;
       }
@@ -451,16 +447,10 @@
 
     function endDrag(commit) {
       if (!drag) return;
-      if (commit && drag.target) {
-        var m = parseInt(drag.target.dataset.ministry, 10);
-        var s = parseInt(drag.target.dataset.slot, 10);
-        if (drag.from.type === 'hand') {
-          playerHand.splice(drag.from.index, 1);
-          playerCoins -= drag.card.cost;
-        } else {
-          playerBoard[drag.from.m][drag.from.s] = null;
-        }
-        playerBoard[m][s] = drag.card;
+      if (commit && drag.target !== null) {
+        playerHand.splice(drag.index, 1);
+        playerCoins -= drag.card.cost;
+        playerBoard[drag.target].push(drag.card);
       }
       drag.ghost.remove();
       drag = null;
