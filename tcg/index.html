@@ -12,14 +12,38 @@
     background: #1a1a2e;
     color: #eee;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
+    padding: 1rem;
   }
-  main { text-align: center; padding: 2rem; }
-  h1 { font-size: 1.25rem; font-weight: 600; opacity: 0.6; margin-bottom: 2rem; }
-  #turn-counter { font-size: 3rem; font-weight: 700; margin-bottom: 2.5rem; }
+  .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.5rem; }
+  .hand {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 82px;
+    align-content: flex-start;
+  }
+  .card {
+    width: 54px;
+    height: 76px;
+    border-radius: 8px;
+    border: 2px solid #888;
+    flex: 0 0 auto;
+  }
+  .card.face-up { background: #f0e6d2; }
+  .card.face-down { background: #2e2e4e; border-color: #555; }
+  #table {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 1rem 0;
+  }
+  #turn-counter { font-size: 2rem; font-weight: 700; }
   #end-turn {
     font-size: 1.25rem;
     font-weight: 600;
@@ -33,45 +57,97 @@
     -webkit-tap-highlight-color: transparent;
   }
   #end-turn:active { transform: scale(0.97); }
+  #player-zone { margin-top: auto; }
 </style>
 </head>
 <body>
-  <main>
-    <h1>TCG &mdash; alpha prototype</h1>
+  <section id="opponent-zone">
+    <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
+    <div class="hand" id="opp-hand"></div>
+  </section>
+
+  <section id="table">
     <p id="turn-counter">Turn 1 of 6</p>
     <button id="end-turn" type="button">End Turn</button>
-  </main>
+  </section>
+
+  <section id="player-zone">
+    <div class="zone-label">You &middot; <span id="player-deck-count"></span></div>
+    <div class="hand" id="player-hand"></div>
+  </section>
+
 <script>
   (function () {
     var MAX_TURNS = 6;
-    var turn = 1;
-    var gameOver = false;
-    var counter = document.getElementById('turn-counter');
-    var button = document.getElementById('end-turn');
+    var STARTING_HAND = 4;
+    var DECK_SIZE = 15;
 
-    function render() {
-      if (gameOver) {
-        counter.textContent = 'Game over';
-        button.textContent = 'New Game';
-      } else {
-        counter.textContent = 'Turn ' + turn + ' of ' + MAX_TURNS;
-        button.textContent = (turn === MAX_TURNS) ? 'Finish Game' : 'End Turn';
+    var turn, gameOver;
+    var playerDeck, playerHand, oppDeck, oppHand;
+
+    function newDeck() {
+      var d = [];
+      for (var i = 0; i < DECK_SIZE; i++) d.push({ id: i });
+      for (var j = d.length - 1; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1));
+        var t = d[j]; d[j] = d[k]; d[k] = t;
       }
+      return d;
     }
 
-    button.addEventListener('click', function () {
+    function draw(deck, hand) {
+      if (deck.length > 0) hand.push(deck.pop());
+    }
+
+    function renderHand(elId, hand, faceUp) {
+      var el = document.getElementById(elId);
+      el.innerHTML = '';
+      hand.forEach(function () {
+        var c = document.createElement('div');
+        c.className = 'card ' + (faceUp ? 'face-up' : 'face-down');
+        el.appendChild(c);
+      });
+    }
+
+    function render() {
+      document.getElementById('turn-counter').textContent =
+        gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
+      document.getElementById('end-turn').textContent =
+        gameOver ? 'New Game' : (turn === MAX_TURNS ? 'Finish Game' : 'End Turn');
+      renderHand('player-hand', playerHand, true);
+      renderHand('opp-hand', oppHand, false);
+      document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
+      document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
+    }
+
+    function newGame() {
+      turn = 1;
+      gameOver = false;
+      playerDeck = newDeck(); playerHand = [];
+      oppDeck = newDeck(); oppHand = [];
+      for (var i = 0; i < STARTING_HAND; i++) {
+        draw(playerDeck, playerHand);
+        draw(oppDeck, oppHand);
+      }
+      render();
+    }
+
+    document.getElementById('end-turn').addEventListener('click', function () {
       if (gameOver) {
-        turn = 1;
-        gameOver = false;
-      } else if (turn >= MAX_TURNS) {
+        newGame();
+        return;
+      }
+      if (turn >= MAX_TURNS) {
         gameOver = true;
       } else {
         turn += 1;
+        draw(playerDeck, playerHand);
+        draw(oppDeck, oppHand);
       }
       render();
     });
 
-    render();
+    newGame();
   })();
 </script>
 </body>
