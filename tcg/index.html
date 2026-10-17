@@ -20,36 +20,48 @@
   }
   .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
 
-  /* ---- ministries as columns ---- */
-  #board {
+  /* ---- middle: board + side panel ---- */
+  #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
+  #board { flex: 1; display: flex; gap: 8px; min-width: 0; }
+  #side-panel {
+    width: 92px;
+    flex: 0 0 auto;
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    text-align: center;
   }
+
+  /* ---- ministries as columns ---- */
   .column {
     flex: 1;
     min-width: 0;
-    background: #22223a;
     border-radius: 10px;
-    padding: 6px 4px;
+    padding: 6px 2px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
   }
-  .column.drop-ok { outline: 2px solid #4caf50; background: #243024; }
+  .column.min-red { background: rgba(233, 69, 96, 0.10); }
+  .column.min-yellow { background: rgba(212, 160, 23, 0.10); }
+  .column.min-blue { background: rgba(74, 123, 255, 0.10); }
+  .column.drop-ok { outline: 2px solid #4caf50; }
   .column.drop-full { outline: 2px solid #e94560; }
   .col-cards {
     display: flex;
-    gap: 4px;
-    min-height: 56px;
+    min-height: 54px;
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
   }
+  .col-cards .card + .card { margin-left: -18px; }
   .col-head {
+    margin: auto 0;
     text-align: center;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     padding: 4px 2px;
     border-top: 2px solid #555;
     border-bottom: 2px solid #555;
@@ -94,11 +106,14 @@
   .hand .card .power { font-size: 20px; }
   .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
   .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
-  /* column cards (compact) */
-  .col-cards .card { width: 38px; height: 54px; }
-  .col-cards .card .cname { font-size: 6px; }
-  .col-cards .card .cost { top: 10px; width: 14px; height: 14px; font-size: 9px; }
-  .col-cards .card .power { font-size: 15px; }
+  .card.face-up.min-red { background: #f8d7da; border-color: #e94560; }
+  .card.face-up.min-yellow { background: #fff3cd; border-color: #d4a017; }
+  .card.face-up.min-blue { background: #cfe2ff; border-color: #4a7bff; }
+  /* column cards (compact, overlapping) */
+  .col-cards .card { width: 36px; height: 50px; }
+  .col-cards .card .cname { font-size: 5px; }
+  .col-cards .card .cost { top: 9px; width: 13px; height: 13px; font-size: 8px; left: 2px; }
+  .col-cards .card .power { font-size: 14px; }
   .col-cards .card.face-up { cursor: default; }
   .col-cards .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
   .col-cards .card.opp .power { color: #bbb; }
@@ -112,7 +127,6 @@
     margin: 0;
     width: 56px;
     height: 78px;
-    background: #f0e6d2;
     color: #222;
   }
   .card.drag-ghost .cname { font-size: 7px; }
@@ -129,22 +143,15 @@
   #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
   #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border-color: #555; }
 
-  /* bottom bar: status left, end turn right */
-  #table {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.7rem 0 0.2rem;
-  }
-  #turn-counter { font-size: 1.2rem; font-weight: 700; }
+  #turn-counter { font-size: 1.05rem; font-weight: 700; }
   #coins { font-size: 0.95rem; font-weight: 600; color: #ffd75e; }
   #end-turn {
-    font-size: 1.1rem;
-    font-weight: 600;
-    padding: 0.8rem 1.6rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    width: 100%;
+    padding: 0.8rem 0.3rem;
     border: none;
-    border-radius: 999px;
+    border-radius: 14px;
     background: #e94560;
     color: #fff;
     cursor: pointer;
@@ -191,19 +198,18 @@
     <div id="opp-hand-strip"></div>
   </section>
 
-  <section id="board"></section>
+  <section id="middle">
+    <div id="board"></div>
+    <div id="side-panel">
+      <p id="turn-counter">Turn 1 of 6</p>
+      <p id="coins"></p>
+      <button id="end-turn" type="button">End Turn</button>
+    </div>
+  </section>
 
   <section id="player-zone">
     <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
     <div class="hand" id="player-hand"></div>
-  </section>
-
-  <section id="table">
-    <div>
-      <p id="turn-counter">Turn 1 of 6</p>
-      <p id="coins"></p>
-    </div>
-    <button id="end-turn" type="button">End Turn</button>
   </section>
 
   <div id="result-banner" class="hidden">
@@ -216,16 +222,26 @@
   (function () {
     var MAX_TURNS = 6;
     var STARTING_HAND = 4;
-    var MINISTRIES = ['Military', 'Treasury', 'Intel'];
+    var MINISTRIES = [
+      { name: 'Militia',  color: 'red' },
+      { name: 'Commerce', color: 'yellow' },
+      { name: 'Intrigue', color: 'blue' }
+    ];
     var MAX_PER_MINISTRY = 3;
 
     var STARTER = [
-      { name: 'Conscript',   cost: 1, power: 2,  count: 3 },
-      { name: 'Soldier',     cost: 2, power: 4,  count: 3 },
-      { name: 'Veteran',      cost: 3, power: 6,  count: 3 },
-      { name: 'Elite Guard', cost: 4, power: 9,  count: 2 },
-      { name: 'General',      cost: 5, power: 11, count: 2 },
-      { name: 'Warlord',      cost: 6, power: 14, count: 2 }
+      { name: 'Villager',        cost: 1, power: 2,  count: 2, ministry: null },
+      { name: 'Artisan',         cost: 2, power: 4,  count: 2, ministry: null },
+      { name: 'Scholar',         cost: 3, power: 6,  count: 2, ministry: null },
+      { name: 'Elder',           cost: 4, power: 9,  count: 1, ministry: null },
+      { name: 'Master',           cost: 5, power: 11, count: 1, ministry: null },
+      { name: 'Sage',             cost: 6, power: 14, count: 1, ministry: null },
+      { name: 'Militia Recruit',  cost: 2, power: 6,  count: 1, ministry: 0 },
+      { name: 'Militia Captain',  cost: 4, power: 12, count: 1, ministry: 0 },
+      { name: 'Peddler',          cost: 2, power: 6,  count: 1, ministry: 1 },
+      { name: 'Merchant Prince',  cost: 4, power: 12, count: 1, ministry: 1 },
+      { name: 'Informant',        cost: 2, power: 6,  count: 1, ministry: 2 },
+      { name: 'Spymaster',        cost: 4, power: 12, count: 1, ministry: 2 }
     ];
 
     var turn, gameOver, playerCoins;
@@ -237,7 +253,7 @@
       var d = [];
       STARTER.forEach(function (t) {
         for (var i = 0; i < t.count; i++) {
-          d.push({ id: nextId++, name: t.name, cost: t.cost, power: t.power });
+          d.push({ id: nextId++, name: t.name, cost: t.cost, power: t.power, ministry: t.ministry });
         }
       });
       for (var j = d.length - 1; j > 0; j--) {
@@ -257,9 +273,14 @@
       return t;
     }
 
+    function colorClass(card) {
+      if (card.ministry === null || card.ministry === undefined) return '';
+      return ' min-' + MINISTRIES[card.ministry].color;
+    }
+
     function cardEl(card, cls) {
       var c = document.createElement('div');
-      c.className = 'card ' + cls;
+      c.className = 'card ' + cls + colorClass(card);
       c.dataset.cardId = card.id;
       var name = document.createElement('div');
       name.className = 'cname';
@@ -278,7 +299,7 @@
 
     function oppCardEl(card) {
       var c = document.createElement('div');
-      c.className = 'card opp';
+      c.className = 'card opp' + colorClass(card);
       var power = document.createElement('div');
       power.className = 'power';
       power.textContent = card.power;
@@ -293,7 +314,7 @@
         var yp = ministryPower(playerBoard, m);
         var op = ministryPower(oppBoard, m);
         var col = document.createElement('div');
-        col.className = 'column';
+        col.className = 'column min-' + MINISTRIES[m].color;
         col.dataset.ministry = m;
 
         var oppRow = document.createElement('div');
@@ -303,7 +324,7 @@
 
         var head = document.createElement('div');
         head.className = 'col-head' + (yp > op ? ' lead-you' : op > yp ? ' lead-opp' : '');
-        head.textContent = MINISTRIES[m];
+        head.textContent = MINISTRIES[m].name;
         var tally = document.createElement('span');
         tally.className = 'tally';
         var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = yp;
@@ -403,21 +424,28 @@
       render();
     }
 
+    function validColumns(board, card) {
+      var cols = [];
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        if (board[m].length >= MAX_PER_MINISTRY) continue;
+        if (card.ministry !== null && card.ministry !== undefined && card.ministry !== m) continue;
+        cols.push(m);
+      }
+      return cols;
+    }
+
     function opponentPlay() {
       var coins = turn; // same income rule as the player
       while (true) {
-        var openCols = [];
-        for (var m = 0; m < MINISTRIES.length; m++)
-          if (oppBoard[m].length < MAX_PER_MINISTRY) openCols.push(m);
-        if (openCols.length === 0) break;
-        var affordable = oppHand.filter(function (c) { return c.cost <= coins; });
+        var affordable = oppHand
+          .filter(function (c) { return c.cost <= coins && validColumns(oppBoard, c).length > 0; })
+          .sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
         if (affordable.length === 0) break;
-        affordable.sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
         var card = affordable[0];
+        var open = validColumns(oppBoard, card);
         oppHand.splice(oppHand.indexOf(card), 1);
         coins -= card.cost;
-        var col = openCols[Math.floor(Math.random() * openCols.length)];
-        oppBoard[col].push(card);
+        oppBoard[open[Math.floor(Math.random() * open.length)]].push(card);
       }
     }
 
@@ -459,13 +487,10 @@
       var col = under && under.closest ? under.closest('.column') : null;
       if (col) {
         var m = parseInt(col.dataset.ministry, 10);
-        if (playerBoard[m].length < MAX_PER_MINISTRY) {
-          col.classList.add('drop-ok');
-          drag.target = m;
-        } else {
-          col.classList.add('drop-full');
-          drag.target = null;
-        }
+        var ok = playerBoard[m].length < MAX_PER_MINISTRY &&
+          (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === m);
+        col.classList.add(ok ? 'drop-ok' : 'drop-full');
+        drag.target = ok ? m : null;
       } else {
         drag.target = null;
       }
