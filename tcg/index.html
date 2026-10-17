@@ -48,15 +48,22 @@
   .column.min-blue { background: rgba(74, 123, 255, 0.10); }
   .column.drop-ok { outline: 2px solid #4caf50; }
   .column.drop-full { outline: 2px solid #e94560; }
-  .col-cards {
+  .col-slots {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-height: 54px;
     align-items: center;
-    justify-content: center;
-    flex-wrap: nowrap;
+    justify-content: flex-start;
+    flex: 0 0 auto;
   }
+  .slot {
+    width: 46px;
+    height: 64px;
+    border-radius: 7px;
+    border: 2px dashed #444;
+    flex: 0 0 auto;
+  }
+  .slot.filled { border-color: transparent; }
   .col-head {
     margin: auto 0;
     text-align: center;
@@ -111,13 +118,13 @@
   .card.face-up.min-yellow { background: #fff3cd; border-color: #d4a017; }
   .card.face-up.min-blue { background: #cfe2ff; border-color: #4a7bff; }
   /* column cards (compact, overlapping) */
-  .col-cards .card { width: 46px; height: 64px; }
-  .col-cards .card .cname { font-size: 6px; }
-  .col-cards .card .cost { top: 11px; width: 15px; height: 15px; font-size: 9px; left: 3px; }
-  .col-cards .card .power { font-size: 16px; }
-  .col-cards .card.face-up { cursor: default; }
-  .col-cards .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
-  .col-cards .card.opp .power { color: #bbb; }
+  .slot .card { width: 100%; height: 100%; }
+  .slot .card .cname { font-size: 6px; }
+  .slot .card .cost { top: 11px; width: 15px; height: 15px; font-size: 9px; left: 3px; }
+  .slot .card .power { font-size: 16px; }
+  .slot .card.face-up { cursor: default; }
+  .slot .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
+  .slot .card.opp .power { color: #bbb; }
   /* drag ghost: explicit sizing, since it's detached from .hand */
   .card.drag-ghost {
     position: fixed;
@@ -332,10 +339,15 @@
         col.className = 'column min-' + MINISTRIES[m].color;
         col.dataset.ministry = m;
 
-        var oppRow = document.createElement('div');
-        oppRow.className = 'col-cards';
-        oppBoard[m].forEach(function (card) { oppRow.appendChild(oppCardEl(card)); });
-        col.appendChild(oppRow);
+        var oppSlots = document.createElement('div');
+        oppSlots.className = 'col-slots';
+        for (var s = 0; s < MAX_PER_MINISTRY; s++) {
+          var oslot = document.createElement('div');
+          oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
+          if (oppBoard[m][s]) oslot.appendChild(oppCardEl(oppBoard[m][s]));
+          oppSlots.appendChild(oslot);
+        }
+        col.appendChild(oppSlots);
 
         var head = document.createElement('div');
         head.className = 'col-head' + (yp > op ? ' lead-you' : op > yp ? ' lead-opp' : '');
@@ -350,10 +362,15 @@
         head.appendChild(tally);
         col.appendChild(head);
 
-        var playerRow = document.createElement('div');
-        playerRow.className = 'col-cards';
-        playerBoard[m].forEach(function (card) { playerRow.appendChild(cardEl(card, 'face-up')); });
-        col.appendChild(playerRow);
+        var playerSlots = document.createElement('div');
+        playerSlots.className = 'col-slots';
+        for (var q = 0; q < MAX_PER_MINISTRY; q++) {
+          var pslot = document.createElement('div');
+          pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
+          if (playerBoard[m][q]) pslot.appendChild(cardEl(playerBoard[m][q], 'face-up'));
+          playerSlots.appendChild(pslot);
+        }
+        col.appendChild(playerSlots);
 
         board.appendChild(col);
       }
