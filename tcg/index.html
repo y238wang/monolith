@@ -102,6 +102,7 @@
   .col-cards .card.face-up { cursor: default; }
   .col-cards .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
   .col-cards .card.opp .power { color: #bbb; }
+  /* drag ghost: explicit sizing, since it's detached from .hand */
   .card.drag-ghost {
     position: fixed;
     z-index: 1000;
@@ -109,7 +110,14 @@
     opacity: 0.92;
     transform: translate(-50%, -50%) scale(1.08);
     margin: 0;
+    width: 56px;
+    height: 78px;
+    background: #f0e6d2;
+    color: #222;
   }
+  .card.drag-ghost .cname { font-size: 7px; }
+  .card.drag-ghost .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
+  .card.drag-ghost .power { font-size: 20px; }
 
   .hand {
     display: flex;
@@ -121,19 +129,20 @@
   #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
   #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border-color: #555; }
 
+  /* bottom bar: status left, end turn right */
   #table {
+    margin-top: auto;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 0.7rem 0;
+    justify-content: space-between;
+    padding: 0.7rem 0 0.2rem;
   }
-  #turn-counter { font-size: 1.3rem; font-weight: 700; }
-  #coins { font-size: 1rem; font-weight: 600; color: #ffd75e; }
+  #turn-counter { font-size: 1.2rem; font-weight: 700; }
+  #coins { font-size: 0.95rem; font-weight: 600; color: #ffd75e; }
   #end-turn {
     font-size: 1.1rem;
     font-weight: 600;
-    padding: 0.8rem 2rem;
+    padding: 0.8rem 1.6rem;
     border: none;
     border-radius: 999px;
     background: #e94560;
@@ -143,14 +152,16 @@
     -webkit-tap-highlight-color: transparent;
   }
   #end-turn:active { transform: scale(0.97); }
-  #player-zone { margin-top: auto; }
+  #player-zone { margin-top: 0.75rem; }
 
   #result-banner {
     position: fixed; inset: 0;
-    background: rgba(10, 10, 20, 0.85);
+    background: rgba(10, 10, 20, 0.88);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 0.75rem; z-index: 2000;
+    gap: 0.9rem; z-index: 2000;
+    padding: 2rem;
+    text-align: center;
   }
   #result-banner.hidden { display: none; }
   #result-title { font-size: 2.5rem; font-weight: 800; }
@@ -158,6 +169,20 @@
   #result-title.lose { color: #f0a0a0; }
   #result-title.draw { color: #ccc; }
   #result-sub { font-size: 1.1rem; opacity: 0.8; }
+  #new-game {
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 0.9rem 2.5rem;
+    border: none;
+    border-radius: 999px;
+    background: #4caf50;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #new-game:active { transform: scale(0.97); }
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -168,6 +193,11 @@
 
   <section id="board"></section>
 
+  <section id="player-zone">
+    <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
+    <div class="hand" id="player-hand"></div>
+  </section>
+
   <section id="table">
     <div>
       <p id="turn-counter">Turn 1 of 6</p>
@@ -176,14 +206,10 @@
     <button id="end-turn" type="button">End Turn</button>
   </section>
 
-  <section id="player-zone">
-    <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
-    <div class="hand" id="player-hand"></div>
-  </section>
-
   <div id="result-banner" class="hidden">
     <div id="result-title"></div>
     <div id="result-sub"></div>
+    <button id="new-game" type="button">New Game</button>
   </div>
 
 <script>
@@ -319,7 +345,7 @@
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
       document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
       document.getElementById('end-turn').textContent =
-        gameOver ? 'New Game' : (turn === MAX_TURNS ? 'Finish Game' : 'End Turn');
+        turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'End Turn';
       renderBoard();
       renderHand();
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
@@ -462,10 +488,7 @@
     document.addEventListener('pointercancel', function () { endDrag(false); });
 
     document.getElementById('end-turn').addEventListener('click', function () {
-      if (gameOver) {
-        newGame();
-        return;
-      }
+      if (gameOver) return; // restart now lives in the result modal
       opponentPlay();
       if (turn >= MAX_TURNS) {
         gameOver = true;
@@ -478,6 +501,10 @@
         draw(oppDeck, oppHand);
         render();
       }
+    });
+
+    document.getElementById('new-game').addEventListener('click', function () {
+      newGame();
     });
 
     newGame();
