@@ -98,7 +98,7 @@
   .card.big .cname { font-size: 7.5px; }
   .card.big .cost { top: 14px; width: 19px; height: 19px; font-size: 11px; }
   .card.big .power { font-size: 20px; bottom: 2px; }
-  .card.big .ctext { top: 36px; font-size: 6.5px; }
+  .card.big .ctext { top: 52px; font-size: 6.5px; -webkit-line-clamp: 3; }
   .card.big.min-red { background: #f8d7da; }
   .card.big.min-yellow { background: #fff3cd; }
   .card.big.min-blue { background: #cfe2ff; }
@@ -112,7 +112,7 @@
     text-align: center; line-height: 1.3; opacity: 0.9;
     display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .hand .card .ctext { top: 32px; font-size: 6px; -webkit-line-clamp: 3; }
+  .hand .card .ctext { top: 38px; font-size: 6px; -webkit-line-clamp: 2; }
   .slot .card .ctext { display: none; }
   #deck-tools { margin-bottom: 0.5rem; }
   #deck-reset {
@@ -334,6 +334,48 @@
     position: absolute; bottom: 1px; left: 0; right: 0;
     text-align: center; font-weight: 800;
   }
+  /* art window (populated when assets/cards/set1/<uid>.webp exists) */
+  .card .art {
+    position: absolute; left: 4px; right: 4px; top: 13px; height: 22px;
+    border-radius: 4px; overflow: hidden;
+    background: linear-gradient(135deg, #2b2b52, #17172e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card .art .art-ph { color: #d4a017; font-size: 12px; opacity: 0.7; }
+  .card .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .card.big .art { top: 15px; height: 34px; left: 5px; right: 5px; }
+  .slot .card .art { display: none; }
+  /* long-press zoom modal */
+  #zoom-modal {
+    position: fixed; inset: 0; z-index: 2600;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none;
+  }
+  #zoom-modal.hidden { display: none; }
+  #zoom-card .card.zoom {
+    width: 240px; height: 340px;
+    background: #f0e6d2; color: #222;
+    cursor: default;
+  }
+  #zoom-card .card.zoom .cname { font-size: 17px; top: 6px; }
+  #zoom-card .card.zoom .art { top: 30px; height: 150px; left: 8px; right: 8px; }
+  #zoom-card .card.zoom .art .art-ph { font-size: 40px; }
+  #zoom-card .card.zoom .cost { top: 34px; left: 10px; width: 34px; height: 34px; font-size: 18px; }
+  #zoom-card .card.zoom .ctype {
+    position: absolute; top: 186px; left: 0; right: 0;
+    text-align: center; font-size: 11px; opacity: 0.65;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  #zoom-card .card.zoom .ctext { top: 206px; left: 10px; right: 10px; font-size: 12.5px; -webkit-line-clamp: 6; }
+  #zoom-card .card.zoom .power { font-size: 34px; bottom: 4px; }
+  #zoom-card .card.zoom.min-red { background: #f8d7da; border-color: #e94560; }
+  #zoom-card .card.zoom.min-yellow { background: #fff3cd; border-color: #d4a017; }
+  #zoom-card .card.zoom.min-blue { background: #cfe2ff; border-color: #4a7bff; }
+  #zoom-card .card.zoom.type-item { background: #e9e0f5; }
+  #zoom-card .card.zoom.type-equip { background: #d9edec; }
+  #zoom-card .card.zoom.rar-U { border-color: #4a7bff; }
+  #zoom-card .card.zoom.rar-R { border-color: #d4a017; }
   /* hand cards (large) */
   .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; }
   .hand .card .cname, .deck-grid .card .cname { font-size: 7px; }
@@ -576,6 +618,10 @@
     </div>
   </div>
 
+  <div id="zoom-modal" class="hidden">
+    <div id="zoom-card"></div>
+  </div>
+
   <div id="toast" class="hidden"></div>
 
 <script>
@@ -602,11 +648,11 @@
       { uid: 'militia-captain', name: 'Militia Captain', type: 'agent', cost: 4, power: 12, ministry: 0, rarity: 'C', text: '' },
       { uid: 'militia-levy', name: 'Militia Levy', type: 'agent', cost: 1, power: 3, ministry: 0, rarity: 'C', text: '' },
       { uid: 'sentry', name: 'Sentry', type: 'agent', cost: 1, power: 2, ministry: 0, rarity: 'C', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
-      { uid: 'man-at-arms', name: 'Man-at-Arms', type: 'agent', cost: 3, power: 9, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'quartermaster', name: 'Quartermaster', type: 'agent', cost: 5, power: 12, ministry: 0, rarity: 'C', text: 'On play: opponent loses 2 coins at the start of your next turn.' },
+      { uid: 'man-at-arms', name: 'Imperial Guard', type: 'agent', cost: 3, power: 9, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'quartermaster', name: 'Provisioner', type: 'agent', cost: 5, power: 12, ministry: 0, rarity: 'C', text: 'On play: opponent loses 2 coins at the start of your next turn.' },
       { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 16, ministry: 0, rarity: 'C', text: '' },
       { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 7, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
-      { uid: 'veteran-sergeant', name: 'Veteran Sergeant', type: 'agent', cost: 4, power: 8, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Militia.' },
+      { uid: 'veteran-sergeant', name: 'Drillmaster', type: 'agent', cost: 4, power: 8, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Militia.' },
       { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 6, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin.' },
       { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 15, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
       // Commerce agents (11)
@@ -616,7 +662,7 @@
       { uid: 'broker', name: 'Broker', type: 'agent', cost: 1, power: 2, ministry: 1, rarity: 'C', text: 'On play: gain 1 coin.' },
       { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 9, ministry: 1, rarity: 'C', text: '' },
       { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 12, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
-      { uid: 'trade-magnate', name: 'Trade Magnate', type: 'agent', cost: 6, power: 16, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 16, ministry: 1, rarity: 'C', text: '' },
       { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 8, ministry: 1, rarity: 'U', text: 'On play: +1 wealth.' },
       { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 4, ministry: 1, rarity: 'U', text: 'On play: draw a card, then discard a card.' },
       { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 6, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
@@ -649,7 +695,7 @@
       { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 wealth.' },
       { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your wealth.' },
       // Equips (8)
-      { uid: 'iron-arms', name: 'Iron Arms', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+      { uid: 'iron-arms', name: 'Iron Bracers', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'concealed-blade', name: 'Concealed Blade', type: 'equip', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
@@ -794,6 +840,23 @@
       return ' min-' + MINISTRIES[card.ministry].color;
     }
 
+    function artEl(uid) {
+      var art = document.createElement('div');
+      art.className = 'art';
+      var ph = document.createElement('span');
+      ph.className = 'art-ph';
+      ph.textContent = '\u2726';
+      art.appendChild(ph);
+      if (uid) {
+        var img = document.createElement('img');
+        img.src = 'assets/cards/set1/' + uid + '.webp';
+        img.alt = '';
+        img.onerror = function () { this.remove(); };
+        art.appendChild(img);
+      }
+      return art;
+    }
+
     function cardEl(card, cls) {
       var c = document.createElement('div');
       c.className = 'card ' + cls + colorClass(card);
@@ -802,6 +865,7 @@
       name.className = 'cname';
       name.textContent = card.name;
       c.appendChild(name);
+      c.appendChild(artEl(card.uid));
       if (card.cost !== null && card.cost !== undefined) {
         var cost = document.createElement('div');
         cost.className = 'cost';
@@ -1206,7 +1270,7 @@
     function bigCard(t) {
       var cls = 'big rar-' + t.rarity + ' type-' + t.type;
       if (t.type === 'agent' && t.ministry !== null && t.ministry !== undefined) cls += ' min-' + MINISTRIES[t.ministry].color;
-      return cardEl({ name: t.name, cost: t.cost, power: t.power, ministry: t.ministry, type: t.type, text: t.text }, cls);
+      return cardEl({ name: t.name, cost: t.cost, power: t.power, ministry: t.ministry, type: t.type, text: t.text, uid: t.uid }, cls);
     }
 
     function renderChips(elId, current, onPick) {
@@ -1431,6 +1495,78 @@
       });
     }
 
+    function zoomCardEl(card) {
+      var c = document.createElement('div');
+      c.className = 'card zoom' + colorClass(card);
+      if (card.rarity) c.className += ' rar-' + card.rarity;
+      if (card.type) c.className += ' type-' + card.type;
+      var name = document.createElement('div');
+      name.className = 'cname';
+      name.textContent = card.name;
+      c.appendChild(name);
+      c.appendChild(artEl(card.uid));
+      var ty = document.createElement('div');
+      ty.className = 'ctype';
+      ty.textContent = typeLabel(card);
+      c.appendChild(ty);
+      if (card.cost !== null && card.cost !== undefined) {
+        var cost = document.createElement('div');
+        cost.className = 'cost';
+        cost.textContent = card.cost;
+        c.appendChild(cost);
+      }
+      if (card.type === 'agent') {
+        var power = document.createElement('div');
+        power.className = 'power';
+        power.textContent = agentPower(card);
+        c.appendChild(power);
+      }
+      if (card.text) {
+        var tx = document.createElement('div');
+        tx.className = 'ctext';
+        tx.textContent = card.text;
+        c.appendChild(tx);
+      }
+      return c;
+    }
+
+    var zoomTimer = null, zoomPress = null, zoomOpen = false;
+
+    function cardForZoomEl(el) {
+      var handEl = el.closest('#player-hand .card');
+      if (handEl) return playerHand[parseInt(handEl.dataset.handIndex, 10)] || null;
+      var col = el.closest('#board .column');
+      if (!col) return null;
+      var slot = el.closest('.slot');
+      if (!slot) return null;
+      var m = parseInt(col.dataset.ministry, 10);
+      var idx = Array.prototype.indexOf.call(slot.parentNode.children, slot);
+      var board = el.classList.contains('opp') ? oppBoard : playerBoard;
+      return board[m][idx] || null;
+    }
+
+    function showZoom(card) {
+      if (!card) return;
+      zoomTimer = null;
+      zoomPress = null;
+      var zc = document.getElementById('zoom-card');
+      zc.innerHTML = '';
+      zc.appendChild(zoomCardEl(card));
+      document.getElementById('zoom-modal').classList.remove('hidden');
+      zoomOpen = true;
+      if (drag) { drag.ghost.remove(); drag = null; clearHighlights(); }
+    }
+
+    function hideZoom() {
+      document.getElementById('zoom-modal').classList.add('hidden');
+      zoomOpen = false;
+    }
+
+    function cancelZoomPress() {
+      if (zoomTimer) { clearTimeout(zoomTimer); zoomTimer = null; }
+      zoomPress = null;
+    }
+
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
       if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
@@ -1461,6 +1597,15 @@
         e.preventDefault();
         return;
       }
+      // long-press: zoom any card in the game until release
+      var zel = e.target.closest ? e.target.closest('#game-screen .card') : null;
+      if (zel && !zoomOpen) {
+        var zcard = cardForZoomEl(zel);
+        if (zcard) {
+          zoomPress = { x: e.clientX, y: e.clientY };
+          zoomTimer = setTimeout(function () { showZoom(zcard); }, 500);
+        }
+      }
       var t = e.target.closest('#player-hand .card.face-up');
       if (!t) return;
       var card = playerHand[parseInt(t.dataset.handIndex, 10)];
@@ -1477,6 +1622,9 @@
     });
 
     document.addEventListener('pointermove', function (e) {
+      if (zoomTimer && zoomPress) {
+        if (Math.hypot(e.clientX - zoomPress.x, e.clientY - zoomPress.y) > 12) cancelZoomPress();
+      }
       if (!drag) return;
       drag.ghost.style.left = e.clientX + 'px';
       drag.ghost.style.top = e.clientY + 'px';
@@ -1556,8 +1704,16 @@
       render();
     }
 
-    document.addEventListener('pointerup', function () { endDrag(true); });
-    document.addEventListener('pointercancel', function () { endDrag(false); });
+    document.addEventListener('pointerup', function () {
+      cancelZoomPress();
+      if (zoomOpen) { hideZoom(); return; }
+      endDrag(true);
+    });
+    document.addEventListener('pointercancel', function () {
+      cancelZoomPress();
+      if (zoomOpen) { hideZoom(); return; }
+      endDrag(false);
+    });
 
     document.getElementById('end-turn').addEventListener('click', function () {
       if (gameOver) return; // restart now lives in the result modal
