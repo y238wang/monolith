@@ -212,6 +212,24 @@
     -webkit-tap-highlight-color: transparent;
   }
   #new-game:active { transform: scale(0.97); }
+  #discard-slot {
+    width: 68px;
+    border: 2px dashed #666;
+    border-radius: 10px;
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+  }
+  #discard-slot b { color: #ffd75e; font-size: 0.8rem; }
+  #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
+  #discard-slot.used { opacity: 0.3; }
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -226,6 +244,7 @@
       <p id="turn-counter">Turn 1 of 6</p>
       <p id="coins"></p>
       <button id="end-turn" type="button">End Turn</button>
+      <div id="discard-slot"><span>discard</span><b>+1 coin</b></div>
     </div>
   </section>
 
@@ -266,7 +285,7 @@
       { name: 'Spymaster',        cost: 4, power: 12, count: 1, ministry: 2 }
     ];
 
-    var turn, gameOver, playerCoins;
+    var turn, gameOver, playerCoins, discardUsed;
     var playerDeck, playerHand, oppDeck, oppHand;
     var playerBoard, oppBoard; // [ministry] -> array of cards (max 3)
     var nextId = 1;
@@ -403,6 +422,7 @@
       renderHand();
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
+      document.getElementById('discard-slot').classList.toggle('used', discardUsed);
     }
 
     function computeResult() {
@@ -472,6 +492,7 @@
       turn = 1;
       gameOver = false;
       playerCoins = 1; // turn-number income, no carryover
+      discardUsed = false;
       playerDeck = buildDeck(); playerHand = [];
       oppDeck = buildDeck(); oppHand = [];
       playerBoard = [[], [], []];
@@ -513,7 +534,7 @@
     var drag = null;
 
     function clearHighlights() {
-      document.querySelectorAll('.column.drop-ok, .column.drop-full').forEach(function (el) {
+      document.querySelectorAll('.column.drop-ok, .column.drop-full, #discard-slot.drop-ok').forEach(function (el) {
         el.classList.remove('drop-ok');
         el.classList.remove('drop-full');
       });
@@ -545,12 +566,20 @@
       var under = document.elementFromPoint(e.clientX, e.clientY);
       drag.ghost.style.display = '';
       var col = under && under.closest ? under.closest('.column') : null;
-      if (col) {
+      var ds = under && under.closest ? under.closest('#discard-slot') : null;
+      if (ds) {
+        if (!discardUsed) {
+          ds.classList.add('drop-ok');
+          drag.target = { type: 'discard' };
+        } else {
+          drag.target = null;
+        }
+      } else if (col) {
         var m = parseInt(col.dataset.ministry, 10);
         var ok = playerBoard[m].length < MAX_PER_MINISTRY &&
           (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === m);
         col.classList.add(ok ? 'drop-ok' : 'drop-full');
-        drag.target = ok ? m : null;
+        drag.target = ok ? { type: 'ministry', m: m } : null;
       } else {
         drag.target = null;
       }
@@ -558,10 +587,16 @@
 
     function endDrag(commit) {
       if (!drag) return;
-      if (commit && drag.target !== null) {
-        playerHand.splice(drag.index, 1);
-        playerCoins -= drag.card.cost;
-        playerBoard[drag.target].push(drag.card);
+      if (commit && drag.target) {
+        if (drag.target.type === 'discard') {
+          playerHand.splice(drag.index, 1);
+          playerCoins += 1;
+          discardUsed = true;
+        } else {
+          playerHand.splice(drag.index, 1);
+          playerCoins -= drag.card.cost;
+          playerBoard[drag.target.m].push(drag.card);
+        }
       }
       drag.ghost.remove();
       drag = null;
@@ -582,6 +617,7 @@
       } else {
         turn += 1;
         playerCoins = turn; // income = turn number, no carryover
+        discardUsed = false;
         draw(playerDeck, playerHand);
         draw(oppDeck, oppHand);
         render();
