@@ -543,9 +543,9 @@
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
       var t = e.target.closest('#player-hand .card.face-up');
-      if (!t || t.classList.contains('cant-afford')) return;
+      if (!t) return;
       var card = playerHand[parseInt(t.dataset.handIndex, 10)];
-      if (!card || card.cost > playerCoins) return;
+      if (!card) return;
 
       var ghost = t.cloneNode(true);
       ghost.classList.add('drag-ghost');
@@ -576,7 +576,8 @@
         }
       } else if (col) {
         var m = parseInt(col.dataset.ministry, 10);
-        var ok = playerBoard[m].length < MAX_PER_MINISTRY &&
+        var ok = drag.card.cost <= playerCoins &&
+          playerBoard[m].length < MAX_PER_MINISTRY &&
           (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === m);
         col.classList.add(ok ? 'drop-ok' : 'drop-full');
         drag.target = ok ? { type: 'ministry', m: m } : null;
