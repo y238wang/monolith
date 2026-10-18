@@ -95,10 +95,28 @@
   .ccell.unowned .owned { color: #777; }
   .ccell.unowned .card.big { filter: grayscale(1); opacity: 0.45; }
   .card.big { width: 68px; height: 96px; background: #f0e6d2; color: #222; }
-  .card.big .cname { font-size: 7.5px; }
-  .card.big .cost { top: 14px; width: 19px; height: 19px; font-size: 11px; }
-  .card.big .power { font-size: 20px; bottom: 2px; }
-  .card.big .ctext { top: 52px; font-size: 6.5px; -webkit-line-clamp: 3; }
+  .card.big .cname { font-size: 7px; }
+  .card.big .cost { top: 14px; left: 6px; width: 17px; height: 17px; font-size: 10px; }
+  .card.big .power {
+    left: auto; right: 6px; top: 51px; bottom: auto;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card.big .art { top: 11px; height: 58px; }
+  .card.big .ctype { top: 71px; font-size: 5px; }
+  .card.big .ctext { top: 78px; font-size: 5.5px; -webkit-line-clamp: 2; }
+  /* drag ghost mirrors the hand layout (detached from .hand) */
+  .card.drag-ghost .art { top: 10px; left: 3px; right: 3px; height: 47px; }
+  .card.drag-ghost .cname { font-size: 6.5px; }
+  .card.drag-ghost .cost { top: 12px; left: 5px; width: 15px; height: 15px; font-size: 9px; }
+  .card.drag-ghost .power {
+    left: auto; right: 5px; top: 39px; bottom: auto;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card.drag-ghost .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
   .card.big.min-red { background: #f8d7da; }
   .card.big.min-yellow { background: #fff3cd; }
   .card.big.min-blue { background: #cfe2ff; }
@@ -336,14 +354,18 @@
   }
   /* art window (populated when assets/cards/set1/<uid>.webp exists) */
   .card .art {
-    position: absolute; left: 4px; right: 4px; top: 13px; height: 22px;
+    position: absolute; left: 3px; right: 3px; top: 10px; height: 47px;
     border-radius: 4px; overflow: hidden;
     background: linear-gradient(135deg, #2b2b52, #17172e);
     display: flex; align-items: center; justify-content: center;
   }
-  .card .art .art-ph { color: #d4a017; font-size: 12px; opacity: 0.7; }
+  .card .art .art-ph { color: #d4a017; font-size: 14px; opacity: 0.7; }
   .card .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .card.big .art { top: 15px; height: 34px; left: 5px; right: 5px; }
+  .card .ctype {
+    position: absolute; left: 2px; right: 2px;
+    text-align: center; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.65;
+  }
+  .hand .card .ctype, .slot .card .ctype, .card.drag-ghost .ctype { display: none; }
   .slot .card .art { display: none; }
   /* long-press zoom modal */
   #zoom-modal {
@@ -354,20 +376,20 @@
   }
   #zoom-modal.hidden { display: none; }
   #zoom-card .card.zoom {
-    width: 240px; height: 340px;
+    width: 280px; height: 392px;
     background: #f0e6d2; color: #222;
     cursor: default;
   }
-  #zoom-card .card.zoom .cname { font-size: 17px; top: 6px; }
-  #zoom-card .card.zoom .art { top: 30px; height: 150px; left: 8px; right: 8px; }
-  #zoom-card .card.zoom .art .art-ph { font-size: 40px; }
-  #zoom-card .card.zoom .cost { top: 34px; left: 10px; width: 34px; height: 34px; font-size: 18px; }
+  #zoom-card .card.zoom .cname { font-size: 19px; top: 8px; }
+  #zoom-card .card.zoom .art { top: 36px; height: 235px; left: 10px; right: 10px; }
+  #zoom-card .card.zoom .art .art-ph { font-size: 48px; }
+  #zoom-card .card.zoom .cost { top: 40px; left: 14px; width: 40px; height: 40px; font-size: 20px; }
   #zoom-card .card.zoom .ctype {
-    position: absolute; top: 186px; left: 0; right: 0;
-    text-align: center; font-size: 11px; opacity: 0.65;
+    position: absolute; top: 275px; left: 0; right: 0;
+    text-align: center; font-size: 12px; opacity: 0.65;
     text-transform: uppercase; letter-spacing: 0.06em;
   }
-  #zoom-card .card.zoom .ctext { top: 206px; left: 10px; right: 10px; font-size: 12.5px; -webkit-line-clamp: 6; }
+  #zoom-card .card.zoom .ctext { top: 293px; left: 12px; right: 12px; font-size: 13.5px; -webkit-line-clamp: 3; }
   #zoom-card .card.zoom .power { font-size: 34px; bottom: 4px; }
   #zoom-card .card.zoom.min-red { background: #f8d7da; border-color: #e94560; }
   #zoom-card .card.zoom.min-yellow { background: #fff3cd; border-color: #d4a017; }
@@ -378,9 +400,15 @@
   #zoom-card .card.zoom.rar-R { border-color: #d4a017; }
   /* hand cards (large) */
   .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; }
-  .hand .card .cname, .deck-grid .card .cname { font-size: 7px; }
-  .hand .card .cost, .deck-grid .card .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
-  .hand .card .power, .deck-grid .card .power { font-size: 20px; }
+  .hand .card .cname, .deck-grid .card .cname { font-size: 6.5px; }
+  .hand .card .cost, .deck-grid .card .cost { top: 12px; left: 5px; width: 15px; height: 15px; font-size: 9px; }
+  .hand .card .power, .deck-grid .card .power {
+    left: auto; right: 5px; top: 39px; bottom: auto;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hand .card .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
   .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
   .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
   .card.face-up.min-red { background: #f8d7da; border-color: #e94560; }
@@ -866,6 +894,10 @@
       name.textContent = card.name;
       c.appendChild(name);
       c.appendChild(artEl(card.uid));
+      var ty = document.createElement('div');
+      ty.className = 'ctype';
+      ty.textContent = typeLabel(card);
+      c.appendChild(ty);
       if (card.cost !== null && card.cost !== undefined) {
         var cost = document.createElement('div');
         cost.className = 'cost';
@@ -1297,6 +1329,7 @@
         if (n > 0) ownedCount++;
         var cell = document.createElement('div');
         cell.className = 'ccell' + (n === 0 ? ' unowned' : '');
+        cell.dataset.uid = t.uid;
         cell.appendChild(bigCard(t));
         var badge = document.createElement('span');
         badge.className = 'deck-count';
@@ -1555,6 +1588,13 @@
       document.getElementById('zoom-modal').classList.remove('hidden');
       zoomOpen = true;
       if (drag) { drag.ghost.remove(); drag = null; clearHighlights(); }
+      if (ddrag) {
+        ddrag.ghost.remove();
+        ddrag = null;
+        document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
+          el.classList.remove('drop-target');
+        });
+      }
     }
 
     function hideZoom() {
@@ -1566,6 +1606,39 @@
       if (zoomTimer) { clearTimeout(zoomTimer); zoomTimer = null; }
       zoomPress = null;
     }
+
+    function zoomTargetFor(el) {
+      var g = el.closest('#game-screen .card');
+      if (g) return cardForZoomEl(g);
+      var c = el.closest('#collection-screen .ccell');
+      if (c && c.dataset.uid) return cardDef[c.dataset.uid] || null;
+      var d = el.closest('#deck-screen .dcell');
+      if (d && d.dataset.uid) return cardDef[d.dataset.uid] || null;
+      var f = el.closest('#pack-screen .flip.flipped');
+      if (f) {
+        var fan = document.getElementById('pack-fan');
+        var idx = Array.prototype.indexOf.call(fan.children, f);
+        return packCards[idx] || null;
+      }
+      return null;
+    }
+
+    // capture phase: arm long-press zoom before any screen's own handlers run
+    document.addEventListener('pointerdown', function (e) {
+      if (zoomOpen) return;
+      var el = e.target.closest ? e.target.closest('#game-screen .card, #collection-screen .ccell, #deck-screen .dcell, #pack-screen .flip.flipped') : null;
+      if (!el) return;
+      var card = zoomTargetFor(el);
+      if (!card) return;
+      zoomPress = { x: e.clientX, y: e.clientY };
+      zoomTimer = setTimeout(function () { showZoom(card); }, 500);
+    }, true);
+
+    document.addEventListener('pointermove', function (e) {
+      if (zoomTimer && zoomPress) {
+        if (Math.hypot(e.clientX - zoomPress.x, e.clientY - zoomPress.y) > 12) cancelZoomPress();
+      }
+    }, true);
 
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
@@ -1597,15 +1670,7 @@
         e.preventDefault();
         return;
       }
-      // long-press: zoom any card in the game until release
-      var zel = e.target.closest ? e.target.closest('#game-screen .card') : null;
-      if (zel && !zoomOpen) {
-        var zcard = cardForZoomEl(zel);
-        if (zcard) {
-          zoomPress = { x: e.clientX, y: e.clientY };
-          zoomTimer = setTimeout(function () { showZoom(zcard); }, 500);
-        }
-      }
+      // long-press zoom is armed by the capture-phase handler above
       var t = e.target.closest('#player-hand .card.face-up');
       if (!t) return;
       var card = playerHand[parseInt(t.dataset.handIndex, 10)];
@@ -1622,9 +1687,6 @@
     });
 
     document.addEventListener('pointermove', function (e) {
-      if (zoomTimer && zoomPress) {
-        if (Math.hypot(e.clientX - zoomPress.x, e.clientY - zoomPress.y) > 12) cancelZoomPress();
-      }
       if (!drag) return;
       drag.ghost.style.left = e.clientX + 'px';
       drag.ghost.style.top = e.clientY + 'px';
