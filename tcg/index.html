@@ -62,8 +62,28 @@
     border-radius: 7px;
     border: 2px dashed #444;
     flex: 0 0 auto;
+    position: relative;
   }
   .slot.filled { border-color: transparent; }
+  .slot-badge {
+    position: absolute;
+    top: -7px; right: -7px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #2a2a40;
+    border: 1px solid #666;
+    font-size: 11px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.35;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .slot-badge.on {
+    opacity: 1;
+    border-color: #ffd75e;
+    box-shadow: 0 0 6px rgba(255, 215, 94, 0.7);
+  }
   .col-head {
     margin: auto 0;
     text-align: center;
@@ -153,6 +173,7 @@
 
   #turn-counter { font-size: 1.05rem; font-weight: 700; }
   #coins { font-size: 0.95rem; font-weight: 600; color: #ffd75e; }
+  #wealth { font-size: 0.95rem; font-weight: 600; color: #9fd6a4; }
   #end-turn {
     font-size: 0.95rem;
     font-weight: 700;
@@ -230,6 +251,21 @@
   #discard-slot b { color: #ffd75e; font-size: 0.8rem; }
   #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
   #discard-slot.used { opacity: 0.3; }
+  #toast {
+    position: fixed;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 35, 0.95);
+    border: 1px solid #ffd75e;
+    color: #ffd75e;
+    font-size: 0.85rem; font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    z-index: 3000;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.hidden { display: none; }
 </style>
 </head>
 <body oncontextmenu="return false">
@@ -242,6 +278,7 @@
     <div id="board"></div>
     <div id="side-panel">
       <p id="turn-counter">Turn 1 of 6</p>
+      <p id="wealth"></p>
       <p id="coins"></p>
       <button id="end-turn" type="button">End Turn</button>
       <div id="discard-slot"><span>discard</span><b>+1 coin</b></div>
@@ -252,6 +289,8 @@
     <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
     <div class="hand" id="player-hand"></div>
   </section>
+
+  <div id="toast" class="hidden"></div>
 
   <div id="result-banner" class="hidden">
     <div id="result-title"></div>
@@ -269,6 +308,12 @@
       { name: 'Intrigue', color: 'blue' }
     ];
     var MAX_PER_MINISTRY = 3;
+    var BONUS_BADGE = ['\u2694\uFE0F', '\uD83E\uDE99', '\uD83C\uDC0F']; // militia / commerce / intrigue
+    var BONUS_MSG = [
+      'Militia bonus: tax +1 going forward',
+      'Commerce bonus: +1 wealth each turn',
+      'Intrigue bonus: draw +1 card each turn'
+    ];
 
     var STARTER = [
       { name: 'Villager',        cost: 1, power: 2,  count: 2, ministry: null },
@@ -285,7 +330,7 @@
       { name: 'Spymaster',        cost: 4, power: 12, count: 1, ministry: 2 }
     ];
 
-    var turn, gameOver, playerCoins, discardUsed;
+    var turn, gameOver, playerWealth, playerCoins, oppWealth, oppCoins, discardUsed;
     var playerDeck, playerHand, oppDeck, oppHand;
     var playerBoard, oppBoard; // [ministry] -> array of cards (max 3)
     var nextId = 1;
@@ -364,6 +409,7 @@
           var oslot = document.createElement('div');
           oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
           if (oppBoard[m][s]) oslot.appendChild(oppCardEl(oppBoard[m][s]));
+          if (s === 1) oslot.appendChild(slotBadge(m, hasBonus(oppBoard, m)));
           oppSlots.appendChild(oslot);
         }
         col.appendChild(oppSlots);
@@ -387,6 +433,7 @@
           var pslot = document.createElement('div');
           pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
           if (playerBoard[m][q]) pslot.appendChild(cardEl(playerBoard[m][q], 'face-up'));
+          if (q === 1) pslot.appendChild(slotBadge(m, hasBonus(playerBoard, m)));
           playerSlots.appendChild(pslot);
         }
         col.appendChild(playerSlots);
@@ -415,6 +462,7 @@
     function render() {
       document.getElementById('turn-counter').textContent =
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
+      document.getElementById('wealth').textContent = gameOver ? '' : 'Wealth: ' + playerWealth;
       document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
       document.getElementById('end-turn').textContent =
         turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'End Turn';
@@ -488,10 +536,56 @@
       document.getElementById('result-banner').classList.remove('hidden');
     }
 
+    function hasBonus(board, m) { return board[m].length >= 2; }
+
+    function slotBadge(m, on) {
+      var b = document.createElement('span');
+      b.className = 'slot-badge' + (on ? ' on' : '');
+      b.textContent = BONUS_BADGE[m];
+      return b;
+    }
+
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(function () { t.classList.add('hidden'); }, 1800);
+    }
+
+    function startTurn() {
+      // income: wealth grows, coins refill to wealth (no carryover)
+      playerWealth += 1 + (hasBonus(playerBoard, 1) ? 1 : 0);
+      playerCoins = playerWealth;
+      oppWealth += 1 + (hasBonus(oppBoard, 1) ? 1 : 0);
+      oppCoins = oppWealth;
+      // tax: each militia bonus adds +1; lesser militia power pays
+      var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0);
+      if (tax > 0) {
+        var yp = ministryPower(playerBoard, 0);
+        var op = ministryPower(oppBoard, 0);
+        if (yp > op) {
+          var t1 = Math.min(tax, oppCoins);
+          oppCoins -= t1; playerCoins += t1;
+          if (t1 > 0) toast('Tax: opponent pays you ' + t1 + ' coin' + (t1 > 1 ? 's' : ''));
+        } else if (op > yp) {
+          var t2 = Math.min(tax, playerCoins);
+          playerCoins -= t2; oppCoins += t2;
+          if (t2 > 0) toast('Tax: you pay opponent ' + t2 + ' coin' + (t2 > 1 ? 's' : ''));
+        }
+      }
+      // draw
+      var pd = 1 + (hasBonus(playerBoard, 2) ? 1 : 0);
+      var od = 1 + (hasBonus(oppBoard, 2) ? 1 : 0);
+      for (var i = 0; i < pd; i++) draw(playerDeck, playerHand);
+      for (var j = 0; j < od; j++) draw(oppDeck, oppHand);
+    }
+
     function newGame() {
       turn = 1;
       gameOver = false;
-      playerCoins = 1; // turn-number income, no carryover
+      playerWealth = 1; playerCoins = 1; // turn 1: no income phase yet
+      oppWealth = 1; oppCoins = 1;
       discardUsed = false;
       playerDeck = buildDeck(); playerHand = [];
       oppDeck = buildDeck(); oppHand = [];
@@ -516,16 +610,15 @@
     }
 
     function opponentPlay() {
-      var coins = turn; // same income rule as the player
       while (true) {
         var affordable = oppHand
-          .filter(function (c) { return c.cost <= coins && validColumns(oppBoard, c).length > 0; })
+          .filter(function (c) { return c.cost <= oppCoins && validColumns(oppBoard, c).length > 0; })
           .sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
         if (affordable.length === 0) break;
         var card = affordable[0];
         var open = validColumns(oppBoard, card);
         oppHand.splice(oppHand.indexOf(card), 1);
-        coins -= card.cost;
+        oppCoins -= card.cost;
         oppBoard[open[Math.floor(Math.random() * open.length)]].push(card);
       }
     }
@@ -594,9 +687,11 @@
           playerCoins += 1;
           discardUsed = true;
         } else {
+          var pm = drag.target.m;
           playerHand.splice(drag.index, 1);
           playerCoins -= drag.card.cost;
-          playerBoard[drag.target.m].push(drag.card);
+          playerBoard[pm].push(drag.card);
+          if (playerBoard[pm].length === 2) toast(BONUS_MSG[pm]);
         }
       }
       drag.ghost.remove();
@@ -617,10 +712,8 @@
         showResult();
       } else {
         turn += 1;
-        playerCoins = turn; // income = turn number, no carryover
         discardUsed = false;
-        draw(playerDeck, playerHand);
-        draw(oppDeck, oppHand);
+        startTurn(); // income -> tax -> draw, both players
         render();
       }
     });
