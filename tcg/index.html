@@ -84,6 +84,19 @@
     border-color: #ffd75e;
     box-shadow: 0 0 6px rgba(255, 215, 94, 0.7);
   }
+  .slot-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #777;
+    pointer-events: none;
+  }
   .col-head {
     margin: auto 0;
     text-align: center;
@@ -174,6 +187,10 @@
   #turn-counter { font-size: 1.05rem; font-weight: 700; }
   #coins { font-size: 0.95rem; font-weight: 600; color: #ffd75e; }
   #wealth { font-size: 0.95rem; font-weight: 600; color: #9fd6a4; }
+  #opp-stats { font-size: 0.72rem; opacity: 0.7; display: flex; flex-direction: column; gap: 0.15rem; }
+  #opp-stats .opp-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.58rem; opacity: 0.8; }
+  #opp-wealth { font-weight: 600; color: #9fd6a4; }
+  #opp-coins { font-weight: 600; color: #ffd75e; }
   #end-turn {
     font-size: 0.95rem;
     font-weight: 700;
@@ -277,6 +294,11 @@
   <section id="middle">
     <div id="board"></div>
     <div id="side-panel">
+      <div id="opp-stats">
+        <span class="opp-label">opponent</span>
+        <p id="opp-wealth"></p>
+        <p id="opp-coins"></p>
+      </div>
       <p id="turn-counter">Turn 1 of 6</p>
       <p id="wealth"></p>
       <p id="coins"></p>
@@ -309,6 +331,7 @@
     ];
     var MAX_PER_MINISTRY = 3;
     var BONUS_BADGE = ['\u2694\uFE0F', '\uD83E\uDE99', '\uD83C\uDC0F']; // militia / commerce / intrigue
+    var SLOT_HINT = ['+tax', '+wealth', '+draw'];
     var BONUS_MSG = [
       'Militia bonus: tax +1 going forward',
       'Commerce bonus: +1 wealth each turn',
@@ -408,6 +431,7 @@
         for (var s = 0; s < MAX_PER_MINISTRY; s++) {
           var oslot = document.createElement('div');
           oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
+          if (s === 1 && !oppBoard[m][s]) oslot.appendChild(slotHint(m));
           if (oppBoard[m][s]) oslot.appendChild(oppCardEl(oppBoard[m][s]));
           if (s === 1) oslot.appendChild(slotBadge(m, hasBonus(oppBoard, m)));
           oppSlots.appendChild(oslot);
@@ -432,6 +456,7 @@
         for (var q = 0; q < MAX_PER_MINISTRY; q++) {
           var pslot = document.createElement('div');
           pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
+          if (q === 1 && !playerBoard[m][q]) pslot.appendChild(slotHint(m));
           if (playerBoard[m][q]) pslot.appendChild(cardEl(playerBoard[m][q], 'face-up'));
           if (q === 1) pslot.appendChild(slotBadge(m, hasBonus(playerBoard, m)));
           playerSlots.appendChild(pslot);
@@ -462,6 +487,8 @@
     function render() {
       document.getElementById('turn-counter').textContent =
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
+      document.getElementById('opp-wealth').textContent = gameOver ? '' : 'Wealth: ' + oppWealth;
+      document.getElementById('opp-coins').textContent = gameOver ? '' : 'Coins: ' + oppCoins;
       document.getElementById('wealth').textContent = gameOver ? '' : 'Wealth: ' + playerWealth;
       document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
       document.getElementById('end-turn').textContent =
@@ -543,6 +570,13 @@
       b.className = 'slot-badge' + (on ? ' on' : '');
       b.textContent = BONUS_BADGE[m];
       return b;
+    }
+
+    function slotHint(m) {
+      var h = document.createElement('span');
+      h.className = 'slot-hint';
+      h.textContent = SLOT_HINT[m];
+      return h;
     }
 
     function toast(msg) {
