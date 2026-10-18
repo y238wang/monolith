@@ -38,10 +38,10 @@
   #play-btn { background: #4caf50; color: #fff; }
   #deck-btn { background: #3a3a5e; color: #eee; border: 1px solid #555; }
   #deck-screen { overflow-y: auto; }
-  #deck-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
-  #deck-head h2 { font-size: 1.3rem; flex: 1; }
-  #deck-total { font-size: 0.85rem; opacity: 0.6; }
-  #deck-back {
+  #deck-head, #collection-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
+  #deck-head h2, #collection-head h2 { font-size: 1.3rem; flex: 1; }
+  #deck-count-label, #collection-total { font-size: 0.85rem; opacity: 0.6; }
+  #deck-back, #collection-back {
     font-size: 0.9rem; font-weight: 700;
     padding: 0.5rem 0.9rem;
     border: 1px solid #555; border-radius: 10px;
@@ -49,6 +49,7 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
+  #collection-screen { overflow-y: auto; }
   .deck-grid { display: flex; flex-wrap: wrap; gap: 14px 12px; justify-content: center; padding: 0.5rem 0 1.5rem; }
   .deck-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .deck-count {
@@ -72,6 +73,86 @@
     -webkit-tap-highlight-color: transparent;
   }
   #menu-btn:active { transform: scale(0.97); }
+  /* ---- collection & deck builder ---- */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.6rem; }
+  .chip {
+    font-size: 0.75rem; font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid #555;
+    background: #2a2a40; color: #ccc;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .chip.active { background: #ffd75e; border-color: #ffd75e; color: #222; }
+  .cgrid { display: flex; flex-wrap: wrap; gap: 14px 10px; justify-content: center; padding: 0.5rem 0 1.5rem; }
+  .ccell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; }
+  .ccell .sub { font-size: 0.6rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; }
+  .ccell .owned { font-size: 0.68rem; font-weight: 700; color: #9fd6a4; }
+  .ccell.unowned .owned { color: #777; }
+  .ccell.unowned .card.big { filter: grayscale(1); opacity: 0.45; }
+  .card.big { width: 68px; height: 96px; background: #f0e6d2; color: #222; }
+  .card.big .cname { font-size: 7.5px; }
+  .card.big .cost { top: 14px; width: 19px; height: 19px; font-size: 11px; }
+  .card.big .power { font-size: 20px; bottom: 2px; }
+  .card.big .ctext { top: 36px; font-size: 6.5px; }
+  .card.big.min-red { background: #f8d7da; }
+  .card.big.min-yellow { background: #fff3cd; }
+  .card.big.min-blue { background: #cfe2ff; }
+  .card.big.type-item { background: #e9e0f5; }
+  .card.big.type-equip { background: #d9edec; }
+  .card.big.rar-C { border-color: #888; }
+  .card.big.rar-U { border-color: #4a7bff; }
+  .card.big.rar-R { border-color: #d4a017; }
+  .card .ctext {
+    position: absolute; left: 3px; right: 3px;
+    text-align: center; line-height: 1.3; opacity: 0.9;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .hand .card .ctext { top: 32px; font-size: 6px; -webkit-line-clamp: 3; }
+  .slot .card .ctext { display: none; }
+  #deck-tools { margin-bottom: 0.5rem; }
+  #deck-reset {
+    font-size: 0.8rem; font-weight: 600;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #555; border-radius: 10px;
+    background: #2a2a40; color: #ccc; cursor: pointer;
+    touch-action: manipulation;
+  }
+  .db-hint { opacity: 0.55; font-size: 0.72rem; text-transform: none; letter-spacing: 0; }
+  #deck-area, #pool-area {
+    border: 2px dashed #3a3a55;
+    border-radius: 12px;
+    padding: 0.6rem 0.4rem;
+    min-height: 110px;
+    margin-bottom: 0.8rem;
+  }
+  #deck-area.drop-target, #pool-area.drop-target { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.06); }
+  #deck-area .cgrid, #pool-area .cgrid { padding: 0; }
+  #deck-area .db-empty { opacity: 0.5; font-size: 0.85rem; text-align: center; width: 100%; padding: 1rem 0; }
+  .slot .card.face-up.drop-ok-card { outline: 2px solid #4caf50; }
+  .slot .card.face-up.drop-full-card { outline: 2px solid #e94560; }
+  .slot .card.opp.targetable { outline: 2px solid #ffd75e; cursor: pointer; }
+  .hand .card.discardable { outline: 2px solid #e94560; cursor: pointer; }
+  .equip-badge {
+    position: absolute; bottom: -6px; left: -6px;
+    background: #d4a017; color: #222;
+    font-size: 9px; font-weight: 800;
+    border-radius: 8px; padding: 1px 5px;
+    z-index: 2; pointer-events: none;
+  }
+  #reveal { position: fixed; inset: 0; background: rgba(10, 10, 20, 0.88); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  #reveal.hidden { display: none; }
+  #reveal-box { background: #23233a; border-radius: 16px; padding: 1.2rem; max-width: 340px; max-height: 80vh; overflow-y: auto; text-align: center; }
+  #reveal-box h3 { margin-bottom: 0.8rem; font-size: 1.1rem; }
+  #reveal-cards { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 1rem; }
+  #reveal-close {
+    font-size: 1rem; font-weight: 700;
+    padding: 0.6rem 2rem;
+    border: none; border-radius: 999px;
+    background: #4caf50; color: #fff; cursor: pointer;
+    touch-action: manipulation;
+  }
 
   /* ---- middle: board + side panel ---- */
   #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
@@ -344,6 +425,7 @@
     <p id="game-subtitle">a game of ministries &amp; wealth</p>
     <button id="play-btn" class="menu-btn" type="button">Play</button>
     <button id="deck-btn" class="menu-btn" type="button">Deck</button>
+    <button id="collection-btn" class="menu-btn" type="button">Collection</button>
   </div>
 
   <div id="game-screen" class="screen hidden">
@@ -373,8 +455,6 @@
     <div class="hand" id="player-hand"></div>
   </section>
 
-  <div id="toast" class="hidden"></div>
-
   <div id="result-banner" class="hidden">
     <div id="result-title"></div>
     <div id="result-sub"></div>
@@ -386,11 +466,38 @@
   <div id="deck-screen" class="screen hidden">
     <div id="deck-head">
       <button id="deck-back" type="button">&#8249; Back</button>
-      <h2>Your Deck</h2>
-      <span id="deck-total"></span>
+      <h2>Deck Builder</h2>
+      <span id="deck-count-label"></span>
     </div>
-    <div id="deck-grid" class="deck-grid"></div>
+    <div id="deck-tools">
+      <button id="deck-reset" type="button">Reset to starter</button>
+    </div>
+    <div class="zone-label">Your deck <span class="db-hint">(drag cards here to add &middot; drag out to remove)</span></div>
+    <div id="deck-area"></div>
+    <div class="zone-label">Owned cards</div>
+    <div id="pool-filters" class="chips"></div>
+    <div id="pool-area"></div>
   </div>
+
+  <div id="collection-screen" class="screen hidden">
+    <div id="collection-head">
+      <button id="collection-back" type="button">&#8249; Back</button>
+      <h2>Collection</h2>
+      <span id="collection-total"></span>
+    </div>
+    <div id="filter-chips" class="chips"></div>
+    <div id="collection-grid" class="cgrid"></div>
+  </div>
+
+  <div id="reveal" class="hidden">
+    <div id="reveal-box">
+      <h3>Opponent's hand</h3>
+      <div id="reveal-cards"></div>
+      <button id="reveal-close" type="button">Close</button>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
 
 <script>
   (function () {
@@ -410,33 +517,141 @@
       'Intrigue bonus: draw +1 card each turn'
     ];
 
-    var STARTER = [
-      { name: 'Villager',        cost: 1, power: 2,  count: 2, ministry: null },
-      { name: 'Artisan',         cost: 2, power: 4,  count: 2, ministry: null },
-      { name: 'Scholar',         cost: 3, power: 6,  count: 2, ministry: null },
-      { name: 'Elder',           cost: 4, power: 9,  count: 1, ministry: null },
-      { name: 'Master',           cost: 5, power: 11, count: 1, ministry: null },
-      { name: 'Sage',             cost: 6, power: 14, count: 1, ministry: null },
-      { name: 'Militia Recruit',  cost: 2, power: 6,  count: 1, ministry: 0 },
-      { name: 'Militia Captain',  cost: 4, power: 12, count: 1, ministry: 0 },
-      { name: 'Peddler',          cost: 2, power: 6,  count: 1, ministry: 1 },
-      { name: 'Merchant Prince',  cost: 4, power: 12, count: 1, ministry: 1 },
-      { name: 'Informant',        cost: 2, power: 6,  count: 1, ministry: 2 },
-      { name: 'Spymaster',        cost: 4, power: 12, count: 1, ministry: 2 }
+    var SET1 = [
+      // Militia agents (11)
+      { uid: 'militia-recruit', name: 'Militia Recruit', type: 'agent', cost: 2, power: 6, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'militia-captain', name: 'Militia Captain', type: 'agent', cost: 4, power: 12, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'militia-levy', name: 'Militia Levy', type: 'agent', cost: 1, power: 3, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'sentry', name: 'Sentry', type: 'agent', cost: 1, power: 2, ministry: 0, rarity: 'C', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
+      { uid: 'man-at-arms', name: 'Man-at-Arms', type: 'agent', cost: 3, power: 9, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'quartermaster', name: 'Quartermaster', type: 'agent', cost: 5, power: 12, ministry: 0, rarity: 'C', text: 'On play: opponent loses 2 coins at the start of your next turn.' },
+      { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 16, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 7, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
+      { uid: 'veteran-sergeant', name: 'Veteran Sergeant', type: 'agent', cost: 4, power: 8, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Militia.' },
+      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 6, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin.' },
+      { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 15, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
+      // Commerce agents (11)
+      { uid: 'peddler', name: 'Peddler', type: 'agent', cost: 2, power: 6, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'merchant-prince', name: 'Merchant Prince', type: 'agent', cost: 4, power: 12, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'errand-boy', name: 'Errand Boy', type: 'agent', cost: 1, power: 3, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'broker', name: 'Broker', type: 'agent', cost: 1, power: 2, ministry: 1, rarity: 'C', text: 'On play: gain 1 coin.' },
+      { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 9, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 12, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
+      { uid: 'trade-magnate', name: 'Trade Magnate', type: 'agent', cost: 6, power: 16, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 8, ministry: 1, rarity: 'U', text: 'On play: +1 wealth.' },
+      { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 4, ministry: 1, rarity: 'U', text: 'On play: draw a card, then discard a card.' },
+      { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 6, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
+      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 12, ministry: 1, rarity: 'R', text: 'On play: double your wealth.' },
+      // Intrigue agents (11)
+      { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 6, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'spymaster', name: 'Spymaster', type: 'agent', cost: 4, power: 12, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'pickpocket', name: 'Pickpocket', type: 'agent', cost: 1, power: 3, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'lookout', name: 'Lookout', type: 'agent', cost: 1, power: 2, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
+      { uid: 'courier', name: 'Courier', type: 'agent', cost: 3, power: 9, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'spy', name: 'Spy', type: 'agent', cost: 5, power: 13, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
+      { uid: 'mastermind', name: 'Mastermind', type: 'agent', cost: 6, power: 14, ministry: 2, rarity: 'C', text: 'On play: draw 2 cards.' },
+      { uid: 'double-agent', name: 'Double Agent', type: 'agent', cost: 3, power: 7, ministry: 2, rarity: 'U', text: "On play: look at the opponent's hand." },
+      { uid: 'blackmailer', name: 'Blackmailer', type: 'agent', cost: 4, power: 8, ministry: 2, rarity: 'U', text: 'On play: opponent discards a random card.' },
+      { uid: 'poisoner', name: 'Poisoner', type: 'agent', cost: 3, power: 6, ministry: 2, rarity: 'U', text: "On play: give an opponent's agent -3 power." },
+      { uid: 'grand-spymaster', name: 'Grand Spymaster', type: 'agent', cost: 6, power: 10, ministry: 2, rarity: 'R', text: "On play: gain control of an opponent's agent." },
+      // Neutral agents (8)
+      { uid: 'villager', name: 'Villager', type: 'agent', cost: 1, power: 2, ministry: null, rarity: 'C', text: '' },
+      { uid: 'artisan', name: 'Artisan', type: 'agent', cost: 2, power: 4, ministry: null, rarity: 'C', text: '' },
+      { uid: 'scholar', name: 'Scholar', type: 'agent', cost: 3, power: 6, ministry: null, rarity: 'C', text: '' },
+      { uid: 'elder', name: 'Elder', type: 'agent', cost: 4, power: 9, ministry: null, rarity: 'C', text: '' },
+      { uid: 'master', name: 'Master', type: 'agent', cost: 5, power: 11, ministry: null, rarity: 'C', text: '' },
+      { uid: 'sage', name: 'Sage', type: 'agent', cost: 6, power: 14, ministry: null, rarity: 'C', text: '' },
+      { uid: 'diplomat', name: 'Diplomat', type: 'agent', cost: 3, power: 7, ministry: null, rarity: 'U', text: 'On play: gain 1 coin and draw a card.' },
+      { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 12, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
+      // Items (5)
+      { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 2 extra coins.' },
+      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 2 coins.' },
+      { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
+      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 wealth.' },
+      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your wealth.' },
+      // Equips (8)
+      { uid: 'iron-arms', name: 'Iron Arms', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+      { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+      { uid: 'concealed-blade', name: 'Concealed Blade', type: 'equip', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+      { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+      { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +8 power.', attachPower: 8 },
+      { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +2 power.', attachPower: 2, coinOnAttach: 3 },
+      { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +3 power.', attachPower: 3, drawOnAttach: 1 },
+      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +6 power and counts as 2 agents for ministry bonuses.', attachPower: 6, countsAsTwo: true }
     ];
+    var cardDef = {};
+    SET1.forEach(function (t) { cardDef[t.uid] = t; });
+
+    var STARTER_DECK = ['villager', 'villager', 'artisan', 'artisan', 'scholar', 'scholar', 'elder', 'master', 'sage',
+      'militia-recruit', 'militia-captain', 'peddler', 'merchant-prince', 'informant', 'spymaster'];
+    var AI_DECK = STARTER_DECK.slice();
+    var MAX_COPIES = 3;
+    var DECK_SIZE = 15;
 
     var turn, gameOver, playerWealth, playerCoins, oppWealth, oppCoins, discardUsed;
+    var pendingTax, pendingTarget, pendingDiscard;
+    var collection = {}; // uid -> owned count
+    var deckList = [];   // array of uids (duplicates = copies)
+
+    function seedCollection() {
+      collection = {};
+      STARTER_DECK.forEach(function (uid) { collection[uid] = (collection[uid] || 0) + 1; });
+      SET1.forEach(function (t) {
+        if (t.rarity === 'C' && !collection[t.uid]) collection[t.uid] = 1;
+      });
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('tcg.collection.v1', JSON.stringify(collection));
+        localStorage.setItem('tcg.deck.v1', JSON.stringify(deckList));
+      } catch (e) {}
+    }
+
+    function loadProgress() {
+      var ok = false;
+      try {
+        var c = JSON.parse(localStorage.getItem('tcg.collection.v1'));
+        var d = JSON.parse(localStorage.getItem('tcg.deck.v1'));
+        if (c && d && Array.isArray(d) && d.length === DECK_SIZE) {
+          var counts = {};
+          ok = d.every(function (uid) {
+            if (!cardDef[uid]) return false;
+            counts[uid] = (counts[uid] || 0) + 1;
+            return counts[uid] <= MAX_COPIES && counts[uid] <= (c[uid] || 0);
+          });
+          if (ok) { collection = c; deckList = d; }
+        }
+      } catch (e) {}
+      if (!ok) {
+        seedCollection();
+        deckList = STARTER_DECK.slice();
+        saveProgress();
+      }
+    }
     var playerDeck, playerHand, oppDeck, oppHand;
     var playerBoard, oppBoard; // [ministry] -> array of cards (max 3)
     var nextId = 1;
 
-    function buildDeck() {
-      var d = [];
-      STARTER.forEach(function (t) {
-        for (var i = 0; i < t.count; i++) {
-          d.push({ id: nextId++, name: t.name, cost: t.cost, power: t.power, ministry: t.ministry });
-        }
-      });
+    function makeCard(t) {
+      var c = {
+        id: nextId++,
+        uid: t.uid, name: t.name, type: t.type,
+        cost: t.cost, power: t.power, ministry: t.ministry,
+        rarity: t.rarity, text: t.text
+      };
+      if (t.type === 'agent') c.equips = [];
+      if (t.type === 'equip') {
+        c.attachPower = t.attachPower || 0;
+        c.coinOnAttach = t.coinOnAttach || 0;
+        c.drawOnAttach = t.drawOnAttach || 0;
+        c.countsAsTwo = !!t.countsAsTwo;
+      }
+      return c;
+    }
+
+    function buildDeck(uids) {
+      var d = uids.map(function (uid) { return makeCard(cardDef[uid]); });
       for (var j = d.length - 1; j > 0; j--) {
         var k = Math.floor(Math.random() * (j + 1));
         var tmp = d[j]; d[j] = d[k]; d[k] = tmp;
@@ -448,10 +663,51 @@
       if (deck.length > 0) hand.push(deck.pop());
     }
 
+    function agentPower(c) {
+      var p = c.power || 0;
+      (c.equips || []).forEach(function (e) { p += e.attachPower || 0; });
+      if (c.powerDelta) p += c.powerDelta;
+      return p;
+    }
+
     function ministryPower(board, m) {
       var t = 0;
-      board[m].forEach(function (c) { t += c.power; });
+      var agents = board[m];
+      agents.forEach(function (c) {
+        var p = agentPower(c);
+        if (c.uid === 'veteran-sergeant') p += 2 * (agents.length - 1);
+        t += p;
+      });
       return t;
+    }
+
+    function bonusCount(board, m) {
+      var n = 0;
+      board[m].forEach(function (c) {
+        n += 1;
+        (c.equips || []).forEach(function (e) { if (e.countsAsTwo) n += 1; });
+      });
+      return n;
+    }
+
+    function hasBonus(board, m) { return bonusCount(board, m) >= 2; }
+
+    function taxModifier(board) {
+      var n = 0;
+      board[0].forEach(function (c) {
+        if (c.uid === 'tax-collector') n += 1;
+        if (c.uid === 'grand-marshal') n += 2;
+      });
+      return n;
+    }
+
+    function hasAuctioneer() {
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        for (var i = 0; i < playerBoard[m].length; i++) {
+          if (playerBoard[m][i].uid === 'auctioneer') return true;
+        }
+      }
+      return false;
     }
 
     function colorClass(card) {
@@ -466,15 +722,25 @@
       var name = document.createElement('div');
       name.className = 'cname';
       name.textContent = card.name;
-      var cost = document.createElement('div');
-      cost.className = 'cost';
-      cost.textContent = card.cost;
-      var power = document.createElement('div');
-      power.className = 'power';
-      power.textContent = card.power;
       c.appendChild(name);
-      c.appendChild(cost);
-      c.appendChild(power);
+      if (card.cost !== null && card.cost !== undefined) {
+        var cost = document.createElement('div');
+        cost.className = 'cost';
+        cost.textContent = card.cost;
+        c.appendChild(cost);
+      }
+      if (card.type === 'agent') {
+        var power = document.createElement('div');
+        power.className = 'power';
+        power.textContent = card.power;
+        c.appendChild(power);
+      }
+      if (card.text) {
+        var tx = document.createElement('div');
+        tx.className = 'ctext';
+        tx.textContent = card.text;
+        c.appendChild(tx);
+      }
       return c;
     }
 
@@ -483,7 +749,7 @@
       c.className = 'card opp' + colorClass(card);
       var power = document.createElement('div');
       power.className = 'power';
-      power.textContent = card.power;
+      power.textContent = agentPower(card);
       c.appendChild(power);
       return c;
     }
@@ -504,7 +770,13 @@
           var oslot = document.createElement('div');
           oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
           if (s === 1 && !oppBoard[m][s]) oslot.appendChild(slotHint(m));
-          if (oppBoard[m][s]) oslot.appendChild(oppCardEl(oppBoard[m][s]));
+          if (oppBoard[m][s]) {
+            var oc = oppCardEl(oppBoard[m][s]);
+            if (pendingTarget && (pendingTarget.kind === 'weaken' || playerBoard[m].length < MAX_PER_MINISTRY)) {
+              oc.classList.add('targetable');
+            }
+            oslot.appendChild(oc);
+          }
           if (s === 1) oslot.appendChild(slotBadge(m, hasBonus(oppBoard, m)));
           oppSlots.appendChild(oslot);
         }
@@ -529,7 +801,20 @@
           var pslot = document.createElement('div');
           pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
           if (q === 1 && !playerBoard[m][q]) pslot.appendChild(slotHint(m));
-          if (playerBoard[m][q]) pslot.appendChild(cardEl(playerBoard[m][q], 'face-up'));
+          if (playerBoard[m][q]) {
+            var pc = cardEl(playerBoard[m][q], 'face-up');
+            pc.querySelector('.power').textContent = agentPower(playerBoard[m][q]);
+            pslot.appendChild(pc);
+            var eqs = playerBoard[m][q].equips || [];
+            if (eqs.length > 0) {
+              var ebonus = 0;
+              eqs.forEach(function (e) { ebonus += e.attachPower || 0; });
+              var eb = document.createElement('span');
+              eb.className = 'equip-badge';
+              eb.textContent = '+' + ebonus;
+              pslot.appendChild(eb);
+            }
+          }
           if (q === 1) pslot.appendChild(slotBadge(m, hasBonus(playerBoard, m)));
           playerSlots.appendChild(pslot);
         }
@@ -543,7 +828,7 @@
       var el = document.getElementById('player-hand');
       el.innerHTML = '';
       playerHand.forEach(function (card, i) {
-        var c = cardEl(card, 'face-up' + (card.cost > playerCoins ? ' cant-afford' : ''));
+        var c = cardEl(card, 'face-up' + (card.cost > playerCoins ? ' cant-afford' : '') + (pendingDiscard ? ' discardable' : ''));
         c.dataset.handIndex = i;
         el.appendChild(c);
       });
@@ -572,14 +857,113 @@
       document.getElementById('discard-slot').classList.toggle('used', discardUsed);
     }
 
+    var ITEM_FX = {
+      'coin-pouch': function () { playerCoins += 2; toast('Coin Pouch: +2 coins'); },
+      'smoke-bomb': function () { oppCoins = Math.max(0, oppCoins - 2); toast('Smoke Bomb: opponent loses 2 coins'); },
+      'sealed-letter': function () { draw(playerDeck, playerHand); toast('Sealed Letter: drew a card'); },
+      'abacus': function () { playerWealth += 1; toast('Abacus: +1 wealth'); },
+      'dragon-pearl': function () { playerCoins += playerWealth; toast('Dragon Pearl: +' + playerWealth + ' coins'); }
+    };
+
+    function oppHasAgents() {
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        if (oppBoard[m].length > 0) return true;
+      }
+      return false;
+    }
+
+    function playerHasSpace() {
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        if (playerBoard[m].length < MAX_PER_MINISTRY) return true;
+      }
+      return false;
+    }
+
+    function onPlay(card) {
+      switch (card.uid) {
+        case 'broker': playerCoins += 1; toast('Broker: +1 coin'); break;
+        case 'moneylender': playerCoins += 3; toast('Moneylender: +3 coins'); break;
+        case 'lookout':
+        case 'spy': draw(playerDeck, playerHand); toast('Drew a card'); break;
+        case 'mastermind': draw(playerDeck, playerHand); draw(playerDeck, playerHand); toast('Drew 2 cards'); break;
+        case 'diplomat': playerCoins += 1; draw(playerDeck, playerHand); toast('Diplomat: +1 coin, drew a card'); break;
+        case 'treasurer': playerWealth += 1; toast('Treasurer: +1 wealth'); break;
+        case 'smuggler':
+          draw(playerDeck, playerHand);
+          if (playerHand.length > 0) {
+            pendingDiscard = true;
+            toast('Smuggler: tap a card in hand to discard');
+          }
+          break;
+        case 'raider': oppCoins = Math.max(0, oppCoins - 1); toast('Raider: opponent loses 1 coin'); break;
+        case 'sentry': pendingTax += 1; toast('Sentry: opponent loses 1 coin next turn'); break;
+        case 'quartermaster': pendingTax += 2; toast('Quartermaster: opponent loses 2 coins next turn'); break;
+        case 'double-agent': showReveal(); break;
+        case 'blackmailer':
+          if (oppHand.length > 0) {
+            oppHand.splice(Math.floor(Math.random() * oppHand.length), 1);
+            toast('Blackmailer: opponent discards a card');
+          }
+          break;
+        case 'poisoner':
+          if (oppHasAgents()) {
+            pendingTarget = { kind: 'weaken' };
+            toast("Poisoner: tap an opponent's agent");
+          }
+          break;
+        case 'grand-spymaster':
+          if (oppHasAgents() && playerHasSpace()) {
+            pendingTarget = { kind: 'steal' };
+            toast("Tap an opponent's agent to steal it");
+          }
+          break;
+      }
+    }
+
+    function applyTarget(kind, m, idx) {
+      var target = oppBoard[m][idx];
+      if (!target) return false;
+      if (kind === 'weaken') {
+        target.powerDelta = (target.powerDelta || 0) - 3;
+        toast('Poisoned: -3 power');
+      } else if (kind === 'steal') {
+        if (playerBoard[m].length >= MAX_PER_MINISTRY) {
+          toast('Your ' + MINISTRIES[m].name + ' is full');
+          return false;
+        }
+        oppBoard[m].splice(idx, 1);
+        playerBoard[m].push(target);
+        toast('Agent stolen!');
+        if (playerBoard[m].length === 2) toast(BONUS_MSG[m]);
+      }
+      return true;
+    }
+
+    function showReveal() {
+      var box = document.getElementById('reveal-cards');
+      box.innerHTML = '';
+      if (oppHand.length === 0) {
+        box.textContent = "Opponent's hand is empty.";
+      } else {
+        oppHand.forEach(function (c) {
+          box.appendChild(cardEl(c, 'big rar-' + c.rarity + ' type-' + c.type));
+        });
+      }
+      document.getElementById('reveal').classList.remove('hidden');
+    }
+
     function computeResult() {
       var you = 0, opp = 0, youPower = 0, oppPower = 0;
+      var arbiter = false;
+      playerBoard.forEach(function (arr) {
+        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiter = true; });
+      });
       var detail = [];
       for (var m = 0; m < MINISTRIES.length; m++) {
         var yp = ministryPower(playerBoard, m);
         var op = ministryPower(oppBoard, m);
         youPower += yp; oppPower += op;
-        var w = yp > op ? 'you' : op > yp ? 'opp' : 'tie';
+        var w = yp > op ? 'you' : op > yp ? 'opp' : (arbiter ? 'you' : 'tie');
         if (w === 'you') you++;
         else if (w === 'opp') opp++;
         detail.push({ name: MINISTRIES[m].name, you: yp, opp: op, winner: w });
@@ -665,8 +1049,16 @@
       playerCoins = playerWealth;
       oppWealth += 1 + (hasBonus(oppBoard, 1) ? 1 : 0);
       oppCoins = oppWealth;
+      // delayed taxes from Sentry / Quartermaster
+      if (pendingTax > 0) {
+        var pt = Math.min(pendingTax, oppCoins);
+        oppCoins -= pt;
+        if (pt > 0) toast('Delayed tax: opponent loses ' + pt + ' coin' + (pt > 1 ? 's' : ''));
+        pendingTax = 0;
+      }
       // tax: each militia bonus adds +1; lesser militia power pays
-      var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0);
+      var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0) +
+        taxModifier(playerBoard) + taxModifier(oppBoard);
       if (tax > 0) {
         var yp = ministryPower(playerBoard, 0);
         var op = ministryPower(oppBoard, 0);
@@ -688,42 +1080,232 @@
     }
 
     function showScreen(name) {
-      ['menu', 'game', 'deck'].forEach(function (s) {
+      ['menu', 'game', 'deck', 'collection'].forEach(function (s) {
         document.getElementById(s + '-screen').classList.toggle('hidden', s !== name);
       });
     }
 
-    function renderDeck() {
-      var grid = document.getElementById('deck-grid');
-      grid.innerHTML = '';
-      var total = 0;
-      STARTER.slice().sort(function (a, b) { return (a.cost - b.cost) || (a.name < b.name ? -1 : 1); })
-        .forEach(function (t) {
-          total += t.count;
-          var cell = document.createElement('div');
-          cell.className = 'deck-cell';
-          cell.appendChild(cardEl({ name: t.name, cost: t.cost, power: t.power, ministry: t.ministry }, 'face-up'));
-          var badge = document.createElement('span');
-          badge.className = 'deck-count';
-          badge.textContent = '\u00D7' + t.count;
-          cell.appendChild(badge);
-          var lab = document.createElement('span');
-          lab.className = 'deck-ministry';
-          lab.textContent = (t.ministry === null || t.ministry === undefined) ? 'neutral' : MINISTRIES[t.ministry].name;
-          cell.appendChild(lab);
-          grid.appendChild(cell);
-        });
-      document.getElementById('deck-total').textContent = total + ' cards';
+    var FILTERS = [
+      { id: 'all', label: 'All' },
+      { id: 'militia', label: 'Militia' },
+      { id: 'commerce', label: 'Commerce' },
+      { id: 'intrigue', label: 'Intrigue' },
+      { id: 'neutral', label: 'Neutral' },
+      { id: 'item', label: 'Items' },
+      { id: 'equip', label: 'Equips' }
+    ];
+    var collectionFilter = 'all';
+    var poolFilter = 'all';
+
+    function cardMatches(t, f) {
+      if (f === 'all') return true;
+      if (f === 'item') return t.type === 'item';
+      if (f === 'equip') return t.type === 'equip';
+      if (f === 'neutral') return t.type === 'agent' && (t.ministry === null || t.ministry === undefined);
+      var mi = { militia: 0, commerce: 1, intrigue: 2 }[f];
+      return t.ministry === mi;
     }
+
+    function sortCards(list) {
+      var typeOrder = { agent: 0, item: 1, equip: 2 };
+      return list.slice().sort(function (a, b) {
+        return (typeOrder[a.type] - typeOrder[b.type]) ||
+          ((a.cost === null || a.cost === undefined ? 99 : a.cost) - (b.cost === null || b.cost === undefined ? 99 : b.cost)) ||
+          (a.name < b.name ? -1 : 1);
+      });
+    }
+
+    function rarityName(r) { return r === 'C' ? 'Common' : r === 'U' ? 'Uncommon' : 'Rare'; }
+
+    function typeLabel(t) {
+      if (t.type === 'item') return 'Item';
+      var base = t.type === 'equip' ? 'Equip' : 'Agent';
+      if (t.ministry !== null && t.ministry !== undefined) return MINISTRIES[t.ministry].name + ' ' + base;
+      return 'Neutral ' + base;
+    }
+
+    function bigCard(t) {
+      var cls = 'big rar-' + t.rarity + ' type-' + t.type;
+      if (t.type === 'agent' && t.ministry !== null && t.ministry !== undefined) cls += ' min-' + MINISTRIES[t.ministry].color;
+      return cardEl({ name: t.name, cost: t.cost, power: t.power, ministry: t.ministry, type: t.type, text: t.text }, cls);
+    }
+
+    function renderChips(elId, current, onPick) {
+      var el = document.getElementById(elId);
+      el.innerHTML = '';
+      FILTERS.forEach(function (f) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip' + (f.id === current ? ' active' : '');
+        b.textContent = f.label;
+        b.addEventListener('click', function () { onPick(f.id); });
+        el.appendChild(b);
+      });
+    }
+
+    function renderCollection() {
+      renderChips('filter-chips', collectionFilter, function (id) { collectionFilter = id; renderCollection(); });
+      var grid = document.getElementById('collection-grid');
+      grid.innerHTML = '';
+      var ownedCount = 0, shown = 0;
+      sortCards(SET1.filter(function (t) { return cardMatches(t, collectionFilter); })).forEach(function (t) {
+        shown++;
+        var n = collection[t.uid] || 0;
+        if (n > 0) ownedCount++;
+        var cell = document.createElement('div');
+        cell.className = 'ccell' + (n === 0 ? ' unowned' : '');
+        cell.appendChild(bigCard(t));
+        var badge = document.createElement('span');
+        badge.className = 'deck-count';
+        badge.textContent = '\u00D7' + n;
+        cell.appendChild(badge);
+        var sub = document.createElement('span');
+        sub.className = 'sub';
+        sub.textContent = typeLabel(t) + ' \u00B7 ' + rarityName(t.rarity);
+        cell.appendChild(sub);
+        grid.appendChild(cell);
+      });
+      document.getElementById('collection-total').textContent = ownedCount + '/' + shown + ' owned';
+    }
+
+    function deckCounts() {
+      var m = {};
+      deckList.forEach(function (uid) { m[uid] = (m[uid] || 0) + 1; });
+      return m;
+    }
+
+    function deckCell(t, from, badgeText, subText) {
+      var cell = document.createElement('div');
+      cell.className = 'ccell dcell';
+      cell.dataset.uid = t.uid;
+      cell.dataset.from = from;
+      cell.appendChild(bigCard(t));
+      var badge = document.createElement('span');
+      badge.className = 'deck-count';
+      badge.textContent = badgeText;
+      cell.appendChild(badge);
+      var sub = document.createElement('span');
+      sub.className = 'sub';
+      sub.textContent = subText;
+      cell.appendChild(sub);
+      return cell;
+    }
+
+    function renderDeckBuilder() {
+      renderChips('pool-filters', poolFilter, function (id) { poolFilter = id; renderDeckBuilder(); });
+      document.getElementById('deck-count-label').textContent = deckList.length + '/' + DECK_SIZE;
+      var counts = deckCounts();
+      var area = document.getElementById('deck-area');
+      area.innerHTML = '';
+      var grid = document.createElement('div');
+      grid.className = 'cgrid';
+      var uids = Object.keys(counts);
+      if (uids.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'db-empty';
+        empty.textContent = 'Drag cards here from your collection below.';
+        grid.appendChild(empty);
+      } else {
+        sortCards(uids.map(function (uid) { return cardDef[uid]; })).forEach(function (t) {
+          grid.appendChild(deckCell(t, 'deck', '\u00D7' + counts[t.uid], typeLabel(t)));
+        });
+      }
+      area.appendChild(grid);
+      var pool = document.getElementById('pool-area');
+      pool.innerHTML = '';
+      var pgrid = document.createElement('div');
+      pgrid.className = 'cgrid';
+      sortCards(SET1.filter(function (t) { return (collection[t.uid] || 0) > 0 && cardMatches(t, poolFilter); })).forEach(function (t) {
+        pgrid.appendChild(deckCell(t, 'pool', '\u00D7' + collection[t.uid], 'in deck \u00D7' + (counts[t.uid] || 0)));
+      });
+      pool.appendChild(pgrid);
+    }
+
+    function tryAddToDeck(uid) {
+      var counts = deckCounts();
+      if (deckList.length >= DECK_SIZE) { toast('Deck is full (' + DECK_SIZE + ' cards)'); return; }
+      if ((counts[uid] || 0) >= MAX_COPIES) { toast('Max ' + MAX_COPIES + ' copies per card'); return; }
+      if ((counts[uid] || 0) >= (collection[uid] || 0)) { toast('You own no more copies'); return; }
+      deckList.push(uid);
+      saveProgress();
+      renderDeckBuilder();
+    }
+
+    function removeFromDeck(uid) {
+      var i = deckList.indexOf(uid);
+      if (i >= 0) {
+        deckList.splice(i, 1);
+        saveProgress();
+        renderDeckBuilder();
+      }
+    }
+
+    var ddrag = null;
+
+    document.addEventListener('pointerdown', function (e) {
+      if (ddrag || drag) return;
+      var cell = e.target.closest ? e.target.closest('#deck-screen .dcell') : null;
+      if (!cell) return;
+      var ghost = cell.querySelector('.card').cloneNode(true);
+      ghost.style.position = 'fixed';
+      ghost.style.zIndex = '1000';
+      ghost.style.pointerEvents = 'none';
+      ghost.style.opacity = '0.92';
+      ghost.style.margin = '0';
+      ghost.style.transform = 'translate(-50%, -50%)';
+      ghost.style.left = e.clientX + 'px';
+      ghost.style.top = e.clientY + 'px';
+      document.body.appendChild(ghost);
+      ddrag = { ghost: ghost, uid: cell.dataset.uid, from: cell.dataset.from, to: null };
+      e.preventDefault();
+    });
+
+    document.addEventListener('pointermove', function (e) {
+      if (!ddrag) return;
+      ddrag.ghost.style.left = e.clientX + 'px';
+      ddrag.ghost.style.top = e.clientY + 'px';
+      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
+        el.classList.remove('drop-target');
+      });
+      ddrag.ghost.style.display = 'none';
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      ddrag.ghost.style.display = '';
+      var da = under && under.closest ? under.closest('#deck-area') : null;
+      var pa = under && under.closest ? under.closest('#pool-area') : null;
+      ddrag.to = null;
+      if (ddrag.from === 'pool' && da) { da.classList.add('drop-target'); ddrag.to = 'deck'; }
+      else if (ddrag.from === 'deck' && pa) { pa.classList.add('drop-target'); ddrag.to = 'pool'; }
+    });
+
+    document.addEventListener('pointerup', function () {
+      if (!ddrag) return;
+      if (ddrag.to === 'deck') tryAddToDeck(ddrag.uid);
+      else if (ddrag.to === 'pool') removeFromDeck(ddrag.uid);
+      ddrag.ghost.remove();
+      ddrag = null;
+      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
+        el.classList.remove('drop-target');
+      });
+    });
+
+    document.addEventListener('pointercancel', function () {
+      if (!ddrag) return;
+      ddrag.ghost.remove();
+      ddrag = null;
+      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
+        el.classList.remove('drop-target');
+      });
+    });
 
     function newGame() {
       turn = 1;
       gameOver = false;
       playerWealth = 1; playerCoins = 1; // turn 1: no income phase yet
       oppWealth = 1; oppCoins = 1;
+      pendingTax = 0; pendingTarget = null; pendingDiscard = false;
       discardUsed = false;
-      playerDeck = buildDeck(); playerHand = [];
-      oppDeck = buildDeck(); oppHand = [];
+      playerDeck = buildDeck(deckList); playerHand = [];
+      oppDeck = buildDeck(AI_DECK); oppHand = [];
       playerBoard = [[], [], []];
       oppBoard = [[], [], []];
       for (var i = 0; i < STARTING_HAND; i++) {
@@ -762,14 +1344,44 @@
     var drag = null;
 
     function clearHighlights() {
-      document.querySelectorAll('.column.drop-ok, .column.drop-full, #discard-slot.drop-ok').forEach(function (el) {
+      document.querySelectorAll('.column.drop-ok, .column.drop-full, #discard-slot.drop-ok, .slot .card.drop-ok-card, .slot .card.drop-full-card').forEach(function (el) {
         el.classList.remove('drop-ok');
         el.classList.remove('drop-full');
+        el.classList.remove('drop-ok-card');
+        el.classList.remove('drop-full-card');
       });
     }
 
     document.addEventListener('pointerdown', function (e) {
       if (gameOver) return;
+      if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
+      if (pendingTarget) {
+        var ot = e.target.closest ? e.target.closest('.column .slot .card.opp') : null;
+        if (ot && ot.classList.contains('targetable')) {
+          var tcol = ot.closest('.column');
+          var tm = parseInt(tcol.dataset.ministry, 10);
+          var tslot = ot.closest('.slot');
+          var tidx = Array.prototype.indexOf.call(tslot.parentNode.children, tslot);
+          if (applyTarget(pendingTarget.kind, tm, tidx)) pendingTarget = null;
+        } else {
+          pendingTarget = null;
+          toast('Targeting cancelled');
+        }
+        render();
+        e.preventDefault();
+        return;
+      }
+      if (pendingDiscard) {
+        var h = e.target.closest ? e.target.closest('#player-hand .card') : null;
+        if (h) {
+          playerHand.splice(parseInt(h.dataset.handIndex, 10), 1);
+          pendingDiscard = false;
+          toast('Discarded');
+          render();
+        }
+        e.preventDefault();
+        return;
+      }
       var t = e.target.closest('#player-hand .card.face-up');
       if (!t) return;
       var card = playerHand[parseInt(t.dataset.handIndex, 10)];
@@ -802,7 +1414,20 @@
         } else {
           drag.target = null;
         }
-      } else if (col) {
+      } else if (drag.card.type === 'equip') {
+        var ael = under && under.closest ? under.closest('.column .slot .card.face-up') : null;
+        if (ael) {
+          var am = parseInt(ael.closest('.column').dataset.ministry, 10);
+          var aslot = ael.closest('.slot');
+          var aidx = Array.prototype.indexOf.call(aslot.parentNode.children, aslot);
+          var aok = drag.card.cost <= playerCoins && !!playerBoard[am][aidx] &&
+            (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === am);
+          ael.classList.add(aok ? 'drop-ok-card' : 'drop-full-card');
+          drag.target = aok ? { type: 'equip', m: am, idx: aidx } : null;
+        } else {
+          drag.target = null;
+        }
+      } else if (col && drag.card.type === 'agent') {
         var m = parseInt(col.dataset.ministry, 10);
         var ok = drag.card.cost <= playerCoins &&
           playerBoard[m].length < MAX_PER_MINISTRY &&
@@ -810,6 +1435,7 @@
         col.classList.add(ok ? 'drop-ok' : 'drop-full');
         drag.target = ok ? { type: 'ministry', m: m } : null;
       } else {
+        if (col) col.classList.add('drop-full');
         drag.target = null;
       }
     });
@@ -820,13 +1446,29 @@
         if (drag.target.type === 'discard') {
           playerHand.splice(drag.index, 1);
           playerCoins += 1;
+          if (hasAuctioneer()) playerCoins += 1;
+          if (drag.card.type === 'item' && ITEM_FX[drag.card.uid]) ITEM_FX[drag.card.uid]();
           discardUsed = true;
+        } else if (drag.target.type === 'equip') {
+          playerHand.splice(drag.index, 1);
+          playerCoins -= drag.card.cost;
+          var ag = playerBoard[drag.target.m][drag.target.idx];
+          ag.equips.push(drag.card);
+          if (drag.card.coinOnAttach) {
+            playerCoins += drag.card.coinOnAttach;
+            toast('+' + drag.card.coinOnAttach + ' coins');
+          }
+          if (drag.card.drawOnAttach) {
+            draw(playerDeck, playerHand);
+            toast('Drew a card');
+          }
         } else {
           var pm = drag.target.m;
           playerHand.splice(drag.index, 1);
           playerCoins -= drag.card.cost;
           playerBoard[pm].push(drag.card);
           if (playerBoard[pm].length === 2) toast(BONUS_MSG[pm]);
+          onPlay(drag.card);
         }
       }
       drag.ghost.remove();
@@ -840,6 +1482,8 @@
 
     document.getElementById('end-turn').addEventListener('click', function () {
       if (gameOver) return; // restart now lives in the result modal
+      pendingTarget = null;
+      pendingDiscard = false;
       opponentPlay();
       if (turn >= MAX_TURNS) {
         gameOver = true;
@@ -858,21 +1502,44 @@
     });
 
     document.getElementById('play-btn').addEventListener('click', function () {
+      if (deckList.length !== DECK_SIZE) {
+        toast('Your deck needs ' + DECK_SIZE + ' cards (' + deckList.length + '/' + DECK_SIZE + ')');
+        renderDeckBuilder();
+        showScreen('deck');
+        return;
+      }
       showScreen('game');
       newGame();
     });
     document.getElementById('deck-btn').addEventListener('click', function () {
-      renderDeck();
+      renderDeckBuilder();
       showScreen('deck');
+    });
+    document.getElementById('collection-btn').addEventListener('click', function () {
+      renderCollection();
+      showScreen('collection');
+    });
+    document.getElementById('collection-back').addEventListener('click', function () {
+      showScreen('menu');
     });
     document.getElementById('deck-back').addEventListener('click', function () {
       showScreen('menu');
+    });
+    document.getElementById('deck-reset').addEventListener('click', function () {
+      deckList = STARTER_DECK.slice();
+      saveProgress();
+      renderDeckBuilder();
+      toast('Deck reset to starter');
+    });
+    document.getElementById('reveal-close').addEventListener('click', function () {
+      document.getElementById('reveal').classList.add('hidden');
     });
     document.getElementById('menu-btn').addEventListener('click', function () {
       document.getElementById('result-banner').classList.add('hidden');
       showScreen('menu');
     });
 
+    loadProgress();
     showScreen('menu');
   })();
 </script>
