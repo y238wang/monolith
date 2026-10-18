@@ -24,6 +24,16 @@
   .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .screen.hidden { display: none; }
   #menu-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
+  #loading-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
+  #load-track {
+    width: 70%; max-width: 280px; height: 10px; border-radius: 5px;
+    background: #2b2b52; border: 1px solid rgba(212,160,23,0.4); overflow: hidden;
+  }
+  #load-fill {
+    height: 100%; width: 0%; border-radius: 5px;
+    background: linear-gradient(90deg, #b8860b, #d4a017); transition: width 0.15s;
+  }
+  #load-status { font-size: 13px; opacity: 0.7; }
   #game-title { font-size: 2.4rem; font-weight: 800; color: #ffd75e; }
   #game-subtitle { font-size: 0.95rem; opacity: 0.6; margin-top: -0.7rem; }
   .menu-btn {
@@ -558,7 +568,14 @@
 </style>
 </head>
 <body oncontextmenu="return false">
-  <div id="menu-screen" class="screen">
+  <div id="loading-screen" class="screen">
+    <h1 id="game-title">TCG Prototype</h1>
+    <p id="game-subtitle">a game of ministries &amp; wealth</p>
+    <div id="load-track"><div id="load-fill"></div></div>
+    <p id="load-status">Loading card art&hellip;</p>
+  </div>
+
+  <div id="menu-screen" class="screen hidden">
     <h1 id="game-title">TCG Prototype</h1>
     <p id="game-subtitle">a game of ministries &amp; wealth</p>
     <button id="play-btn" class="menu-btn" type="button">Play</button>
@@ -876,6 +893,10 @@
       return ' min-' + MINISTRIES[card.ministry].color;
     }
 
+    function artUrl(uid) {
+      return (window.ART_INLINE && ART_INLINE[uid]) || 'assets/cards/set1/' + uid + '.webp';
+    }
+
     function artEl(uid) {
       var art = document.createElement('div');
       art.className = 'art';
@@ -885,7 +906,7 @@
       art.appendChild(ph);
       if (uid) {
         var img = document.createElement('img');
-        img.src = 'assets/cards/set1/' + uid + '.webp';
+        img.src = artUrl(uid);
         img.alt = '';
         img.onerror = function () { this.remove(); };
         art.appendChild(img);
@@ -1263,8 +1284,31 @@
     }
 
     function showScreen(name) {
-      ['menu', 'game', 'deck', 'collection', 'pack'].forEach(function (s) {
+      ['menu', 'game', 'deck', 'collection', 'pack', 'loading'].forEach(function (s) {
         document.getElementById(s + '-screen').classList.toggle('hidden', s !== name);
+      });
+    }
+
+    function preloadArt(done) {
+      var total = SET1.length, loaded = 0;
+      var start = Date.now();
+      var fill = document.getElementById('load-fill');
+      var status = document.getElementById('load-status');
+      function tick() {
+        loaded++;
+        var pct = Math.round(loaded / total * 100);
+        fill.style.width = pct + '%';
+        status.textContent = 'Loading card art… ' + loaded + '/' + total;
+        if (loaded >= total) {
+          var wait = Math.max(0, 600 - (Date.now() - start));
+          setTimeout(done, wait);
+        }
+      }
+      SET1.forEach(function (card) {
+        var img = new Image();
+        img.onload = tick;
+        img.onerror = tick;
+        img.src = artUrl(card.uid);
       });
     }
 
@@ -1961,7 +2005,8 @@
     });
 
     loadProgress();
-    showScreen('menu');
+    showScreen('loading');
+    preloadArt(function () { showScreen('menu'); });
   })();
 </script>
 </body>
