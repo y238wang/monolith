@@ -37,7 +37,10 @@
   .menu-btn:active { transform: scale(0.97); }
   #play-btn { background: #4caf50; color: #fff; }
   #deck-btn { background: #3a3a5e; color: #eee; border: 1px solid #555; }
-  #deck-screen { overflow-y: auto; }
+  #deck-screen { overflow: hidden; }
+  #deck-screen > * { flex: 0 0 auto; }
+  #deck-area { flex: 0 1 auto; max-height: 30vh; overflow-y: auto; touch-action: pan-y; }
+  #pool-area { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #deck-head, #collection-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
   #deck-head h2, #collection-head h2 { font-size: 1.3rem; flex: 1; }
   #deck-count-label, #collection-total { font-size: 0.85rem; opacity: 0.6; }
@@ -85,8 +88,8 @@
     touch-action: manipulation;
   }
   .chip.active { background: #ffd75e; border-color: #ffd75e; color: #222; }
-  .cgrid { display: flex; flex-wrap: wrap; gap: 14px 10px; justify-content: center; padding: 0.5rem 0 1.5rem; }
-  .ccell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; }
+  .cgrid { display: flex; flex-wrap: wrap; gap: 14px 10px; justify-content: center; align-content: flex-start; padding: 0.5rem 0 1.5rem; }
+  .ccell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; flex: 0 0 auto; }
   .ccell .sub { font-size: 0.6rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; }
   .ccell .owned { font-size: 0.68rem; font-weight: 700; color: #9fd6a4; }
   .ccell.unowned .owned { color: #777; }
@@ -153,6 +156,63 @@
     background: #4caf50; color: #fff; cursor: pointer;
     touch-action: manipulation;
   }
+  /* ---- pack opening ---- */
+  #pack-screen { align-items: center; justify-content: center; overflow: hidden; }
+  #pack-stage-closed { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+  #pack-stage-closed.hidden, #pack-stage-open.hidden { display: none; }
+  #pack {
+    width: 150px; height: 210px;
+    position: relative;
+    cursor: grab;
+    touch-action: none;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+  }
+  .pack-half {
+    position: absolute; left: 0; right: 0; height: 50%;
+    background: linear-gradient(135deg, #3a2a6e, #1f1a4e);
+    border: 2px solid #d4a017;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.45s ease-in, opacity 0.45s;
+    overflow: hidden;
+  }
+  #pack-top { top: 0; border-radius: 12px 12px 0 0; border-bottom: 1px dashed #d4a017; }
+  #pack-bottom { bottom: 0; border-radius: 0 0 12px 12px; border-top: 1px dashed #d4a017; }
+  #pack.opening #pack-top { transform: translateY(-70px) rotate(-8deg); opacity: 0; }
+  #pack.opening #pack-bottom { transform: translateY(70px) rotate(8deg); opacity: 0; }
+  .pack-title { color: #ffd75e; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.12em; }
+  .pack-emblem { font-size: 2.4rem; color: #d4a017; }
+  #pack-stage-open { display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; }
+  #pack-fan { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; min-height: 110px; }
+  .flip { perspective: 600px; cursor: pointer; position: relative; touch-action: manipulation; }
+  .flip-inner { position: relative; width: 68px; height: 96px; transition: transform 0.5s; transform-style: preserve-3d; }
+  .flip.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-front, .flip-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .flip-back { transform: rotateY(180deg); }
+  .card-back {
+    width: 68px; height: 96px; border-radius: 8px;
+    background: linear-gradient(135deg, #3a2a6e, #1f1a4e);
+    border: 2px solid #d4a017;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-back .emblem { font-size: 26px; color: #d4a017; }
+  .new-badge {
+    position: absolute; top: -8px; left: -8px;
+    background: #4caf50; color: #fff;
+    font-size: 0.6rem; font-weight: 800;
+    padding: 2px 6px; border-radius: 8px;
+    z-index: 3;
+  }
+  #pack-actions { display: flex; gap: 0.8rem; }
+  .pack-btn {
+    font-size: 1rem; font-weight: 700;
+    padding: 0.8rem 1.4rem;
+    border: none; border-radius: 14px;
+    background: #4caf50; color: #fff; cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pack-btn:active { transform: scale(0.97); }
+  #pack-done { background: #3a3a5e; border: 1px solid #555; }
 
   /* ---- middle: board + side panel ---- */
   #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
@@ -424,6 +484,7 @@
     <h1 id="game-title">TCG Prototype</h1>
     <p id="game-subtitle">a game of ministries &amp; wealth</p>
     <button id="play-btn" class="menu-btn" type="button">Play</button>
+    <button id="pack-btn" class="menu-btn" type="button">Open Pack</button>
     <button id="deck-btn" class="menu-btn" type="button">Deck</button>
     <button id="collection-btn" class="menu-btn" type="button">Collection</button>
   </div>
@@ -494,6 +555,24 @@
       <h3>Opponent's hand</h3>
       <div id="reveal-cards"></div>
       <button id="reveal-close" type="button">Close</button>
+    </div>
+  </div>
+
+  <div id="pack-screen" class="screen hidden">
+    <div id="pack-stage-closed">
+      <div id="pack">
+        <div class="pack-half" id="pack-top"><span class="pack-title">SET 1</span></div>
+        <div class="pack-half" id="pack-bottom"><span class="pack-emblem">✦</span></div>
+      </div>
+      <p class="db-hint">Drag across the pack &mdash; or tap &mdash; to tear it open</p>
+    </div>
+    <div id="pack-stage-open" class="hidden">
+      <div id="pack-fan"></div>
+      <p class="db-hint">Tap cards to reveal</p>
+      <div id="pack-actions">
+        <button id="pack-again" class="pack-btn" type="button">Open Another</button>
+        <button id="pack-done" class="pack-btn" type="button">Done</button>
+      </div>
     </div>
   </div>
 
@@ -1080,7 +1159,7 @@
     }
 
     function showScreen(name) {
-      ['menu', 'game', 'deck', 'collection'].forEach(function (s) {
+      ['menu', 'game', 'deck', 'collection', 'pack'].forEach(function (s) {
         document.getElementById(s + '-screen').classList.toggle('hidden', s !== name);
       });
     }
@@ -1534,6 +1613,122 @@
     document.getElementById('reveal-close').addEventListener('click', function () {
       document.getElementById('reveal').classList.add('hidden');
     });
+
+    // ---- pack opening ----
+    var packCards = [];
+
+    function randomOfRarity(r) {
+      var pool = SET1.filter(function (t) { return t.rarity === r; });
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function resetPackScreen() {
+      var pack = document.getElementById('pack');
+      pack.classList.remove('opening');
+      pack.style.transform = '';
+      document.getElementById('pack-stage-closed').classList.remove('hidden');
+      document.getElementById('pack-stage-open').classList.add('hidden');
+    }
+
+    function tearOpenPack() {
+      var packEl = document.getElementById('pack');
+      if (packEl.classList.contains('opening')) return;
+      packCards = [];
+      for (var i = 0; i < 3; i++) packCards.push(randomOfRarity('C'));
+      packCards.push(randomOfRarity('U'));
+      packCards.push(Math.random() < 0.15 ? randomOfRarity('R') : randomOfRarity('U'));
+      for (var j = packCards.length - 1; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1));
+        var tmp = packCards[j]; packCards[j] = packCards[k]; packCards[k] = tmp;
+      }
+      packCards.forEach(function (t) {
+        t._isNew = !(collection[t.uid] > 0);
+        collection[t.uid] = (collection[t.uid] || 0) + 1;
+      });
+      saveProgress();
+      packEl.classList.add('opening');
+      setTimeout(function () {
+        document.getElementById('pack-stage-closed').classList.add('hidden');
+        renderPackFan();
+        document.getElementById('pack-stage-open').classList.remove('hidden');
+      }, 480);
+    }
+
+    function renderPackFan() {
+      var fan = document.getElementById('pack-fan');
+      fan.innerHTML = '';
+      var angles = [-8, -4, 0, 4, 8];
+      packCards.forEach(function (t, i) {
+        var flip = document.createElement('div');
+        flip.className = 'flip';
+        flip.style.transform = 'rotate(' + angles[i] + 'deg)';
+        var inner = document.createElement('div');
+        inner.className = 'flip-inner';
+        var front = document.createElement('div');
+        front.className = 'flip-front';
+        var back = document.createElement('div');
+        back.className = 'card-back';
+        back.innerHTML = '<span class="emblem">\u2726</span>';
+        front.appendChild(back);
+        var backFace = document.createElement('div');
+        backFace.className = 'flip-back';
+        var bc = bigCard(t);
+        if (t._isNew) {
+          var nb = document.createElement('span');
+          nb.className = 'new-badge';
+          nb.textContent = 'NEW';
+          bc.appendChild(nb);
+        }
+        backFace.appendChild(bc);
+        inner.appendChild(front);
+        inner.appendChild(backFace);
+        flip.appendChild(inner);
+        flip.addEventListener('click', function () {
+          flip.classList.add('flipped');
+        });
+        fan.appendChild(flip);
+      });
+    }
+
+    (function () {
+      var packEl = document.getElementById('pack');
+      var startX = null, dx = 0, moved = false;
+      packEl.addEventListener('pointerdown', function (e) {
+        startX = e.clientX; dx = 0; moved = false;
+        if (packEl.setPointerCapture) {
+          try { packEl.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+      });
+      packEl.addEventListener('pointermove', function (e) {
+        if (startX === null) return;
+        dx = e.clientX - startX;
+        if (Math.abs(dx) > 8) moved = true;
+        packEl.style.transform = 'rotate(' + (dx * 0.08) + 'deg) translateX(' + (dx * 0.3) + 'px)';
+      });
+      function release() {
+        if (startX === null) return;
+        if (Math.abs(dx) > 60 || !moved) tearOpenPack();
+        else packEl.style.transform = '';
+        startX = null;
+      }
+      packEl.addEventListener('pointerup', release);
+      packEl.addEventListener('pointercancel', function () {
+        startX = null;
+        packEl.style.transform = '';
+      });
+    })();
+
+    document.getElementById('pack-btn').addEventListener('click', function () {
+      resetPackScreen();
+      showScreen('pack');
+    });
+    document.getElementById('pack-again').addEventListener('click', function () {
+      resetPackScreen();
+    });
+    document.getElementById('pack-done').addEventListener('click', function () {
+      showScreen('menu');
+    });
+
     document.getElementById('menu-btn').addEventListener('click', function () {
       document.getElementById('result-banner').classList.add('hidden');
       showScreen('menu');
