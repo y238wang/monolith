@@ -20,6 +20,59 @@
   }
   .zone-label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
 
+  /* ---- screens ---- */
+  .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .screen.hidden { display: none; }
+  #menu-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
+  #game-title { font-size: 2.4rem; font-weight: 800; color: #ffd75e; }
+  #game-subtitle { font-size: 0.95rem; opacity: 0.6; margin-top: -0.7rem; }
+  .menu-btn {
+    font-size: 1.3rem; font-weight: 700;
+    width: 220px; padding: 1rem;
+    border: none; border-radius: 16px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-btn:active { transform: scale(0.97); }
+  #play-btn { background: #4caf50; color: #fff; }
+  #deck-btn { background: #3a3a5e; color: #eee; border: 1px solid #555; }
+  #deck-screen { overflow-y: auto; }
+  #deck-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
+  #deck-head h2 { font-size: 1.3rem; flex: 1; }
+  #deck-total { font-size: 0.85rem; opacity: 0.6; }
+  #deck-back {
+    font-size: 0.9rem; font-weight: 700;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid #555; border-radius: 10px;
+    background: #2a2a40; color: #eee; cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .deck-grid { display: flex; flex-wrap: wrap; gap: 14px 12px; justify-content: center; padding: 0.5rem 0 1.5rem; }
+  .deck-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .deck-count {
+    position: absolute; top: -8px; right: -8px;
+    background: #e94560; color: #fff;
+    font-size: 0.7rem; font-weight: 800;
+    min-width: 22px; height: 22px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    z-index: 2;
+  }
+  .deck-ministry { font-size: 0.62rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; }
+  .deck-grid .card.face-up { cursor: default; }
+  #menu-btn {
+    font-size: 1rem; font-weight: 700;
+    padding: 0.8rem 2rem;
+    border: 2px solid #888; border-radius: 999px;
+    background: transparent; color: #eee;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #menu-btn:active { transform: scale(0.97); }
+
   /* ---- middle: board + side panel ---- */
   #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
   #board { flex: 1; display: flex; gap: 8px; min-width: 0; }
@@ -141,10 +194,10 @@
     text-align: center; font-weight: 800;
   }
   /* hand cards (large) */
-  .hand .card { width: 56px; height: 78px; font-size: 9px; }
-  .hand .card .cname { font-size: 7px; }
-  .hand .card .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
-  .hand .card .power { font-size: 20px; }
+  .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; }
+  .hand .card .cname, .deck-grid .card .cname { font-size: 7px; }
+  .hand .card .cost, .deck-grid .card .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
+  .hand .card .power, .deck-grid .card .power { font-size: 20px; }
   .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
   .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
   .card.face-up.min-red { background: #f8d7da; border-color: #e94560; }
@@ -286,6 +339,14 @@
 </style>
 </head>
 <body oncontextmenu="return false">
+  <div id="menu-screen" class="screen">
+    <h1 id="game-title">TCG Prototype</h1>
+    <p id="game-subtitle">a game of ministries &amp; wealth</p>
+    <button id="play-btn" class="menu-btn" type="button">Play</button>
+    <button id="deck-btn" class="menu-btn" type="button">Deck</button>
+  </div>
+
+  <div id="game-screen" class="screen hidden">
   <section id="opp-zone">
     <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
     <div id="opp-hand-strip"></div>
@@ -318,6 +379,17 @@
     <div id="result-title"></div>
     <div id="result-sub"></div>
     <button id="new-game" type="button">New Game</button>
+    <button id="menu-btn" type="button">Menu</button>
+  </div>
+  </div><!-- /game-screen -->
+
+  <div id="deck-screen" class="screen hidden">
+    <div id="deck-head">
+      <button id="deck-back" type="button">&#8249; Back</button>
+      <h2>Your Deck</h2>
+      <span id="deck-total"></span>
+    </div>
+    <div id="deck-grid" class="deck-grid"></div>
   </div>
 
 <script>
@@ -615,6 +687,35 @@
       for (var j = 0; j < od; j++) draw(oppDeck, oppHand);
     }
 
+    function showScreen(name) {
+      ['menu', 'game', 'deck'].forEach(function (s) {
+        document.getElementById(s + '-screen').classList.toggle('hidden', s !== name);
+      });
+    }
+
+    function renderDeck() {
+      var grid = document.getElementById('deck-grid');
+      grid.innerHTML = '';
+      var total = 0;
+      STARTER.slice().sort(function (a, b) { return (a.cost - b.cost) || (a.name < b.name ? -1 : 1); })
+        .forEach(function (t) {
+          total += t.count;
+          var cell = document.createElement('div');
+          cell.className = 'deck-cell';
+          cell.appendChild(cardEl({ name: t.name, cost: t.cost, power: t.power, ministry: t.ministry }, 'face-up'));
+          var badge = document.createElement('span');
+          badge.className = 'deck-count';
+          badge.textContent = '\u00D7' + t.count;
+          cell.appendChild(badge);
+          var lab = document.createElement('span');
+          lab.className = 'deck-ministry';
+          lab.textContent = (t.ministry === null || t.ministry === undefined) ? 'neutral' : MINISTRIES[t.ministry].name;
+          cell.appendChild(lab);
+          grid.appendChild(cell);
+        });
+      document.getElementById('deck-total').textContent = total + ' cards';
+    }
+
     function newGame() {
       turn = 1;
       gameOver = false;
@@ -756,7 +857,23 @@
       newGame();
     });
 
-    newGame();
+    document.getElementById('play-btn').addEventListener('click', function () {
+      showScreen('game');
+      newGame();
+    });
+    document.getElementById('deck-btn').addEventListener('click', function () {
+      renderDeck();
+      showScreen('deck');
+    });
+    document.getElementById('deck-back').addEventListener('click', function () {
+      showScreen('menu');
+    });
+    document.getElementById('menu-btn').addEventListener('click', function () {
+      document.getElementById('result-banner').classList.add('hidden');
+      showScreen('menu');
+    });
+
+    showScreen('menu');
   })();
 </script>
 </body>
