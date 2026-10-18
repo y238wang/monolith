@@ -96,11 +96,11 @@
   .ccell.unowned .card.big { filter: grayscale(1); opacity: 0.45; }
   .card.big { width: 68px; height: 96px; background: #f0e6d2; color: #222; }
   .card.big .cname { font-size: 7px; }
-  .card.big .cost { top: 14px; left: 6px; width: 17px; height: 17px; font-size: 10px; }
+  .card.big .cost { top: -7px; left: -7px; width: 19px; height: 19px; font-size: 11px; }
   .card.big .power {
-    left: auto; right: 6px; top: 51px; bottom: auto;
-    width: 17px; height: 17px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 10px;
+    left: auto; top: auto; bottom: -7px; right: -7px;
+    width: 19px; height: 19px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 11px;
     display: flex; align-items: center; justify-content: center;
   }
   .card.big .art { top: 11px; height: 58px; }
@@ -109,11 +109,11 @@
   /* drag ghost mirrors the hand layout (detached from .hand) */
   .card.drag-ghost .art { top: 10px; left: 3px; right: 3px; height: 47px; }
   .card.drag-ghost .cname { font-size: 6.5px; }
-  .card.drag-ghost .cost { top: 12px; left: 5px; width: 15px; height: 15px; font-size: 9px; }
+  .card.drag-ghost .cost { top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px; }
   .card.drag-ghost .power {
-    left: auto; right: 5px; top: 39px; bottom: auto;
-    width: 15px; height: 15px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 9px;
+    left: auto; top: auto; bottom: -6px; right: -6px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 10px;
     display: flex; align-items: center; justify-content: center;
   }
   .card.drag-ghost .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
@@ -383,14 +383,19 @@
   #zoom-card .card.zoom .cname { font-size: 19px; top: 8px; }
   #zoom-card .card.zoom .art { top: 36px; height: 235px; left: 10px; right: 10px; }
   #zoom-card .card.zoom .art .art-ph { font-size: 48px; }
-  #zoom-card .card.zoom .cost { top: 40px; left: 14px; width: 40px; height: 40px; font-size: 20px; }
+  #zoom-card .card.zoom .cost { top: -10px; left: -10px; width: 44px; height: 44px; font-size: 22px; }
   #zoom-card .card.zoom .ctype {
     position: absolute; top: 275px; left: 0; right: 0;
     text-align: center; font-size: 12px; opacity: 0.65;
     text-transform: uppercase; letter-spacing: 0.06em;
   }
   #zoom-card .card.zoom .ctext { top: 293px; left: 12px; right: 12px; font-size: 13.5px; -webkit-line-clamp: 3; }
-  #zoom-card .card.zoom .power { font-size: 34px; bottom: 4px; }
+  #zoom-card .card.zoom .power {
+    left: auto; top: auto; bottom: -10px; right: -10px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+  }
   #zoom-card .card.zoom.min-red { background: #f8d7da; border-color: #e94560; }
   #zoom-card .card.zoom.min-yellow { background: #fff3cd; border-color: #d4a017; }
   #zoom-card .card.zoom.min-blue { background: #cfe2ff; border-color: #4a7bff; }
@@ -400,12 +405,15 @@
   #zoom-card .card.zoom.rar-R { border-color: #d4a017; }
   /* hand cards (large) */
   .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; }
+  .hand .card, .card.big, .card.drag-ghost, #zoom-card .card.zoom { overflow: visible; }
   .hand .card .cname, .deck-grid .card .cname { font-size: 6.5px; }
-  .hand .card .cost, .deck-grid .card .cost { top: 12px; left: 5px; width: 15px; height: 15px; font-size: 9px; }
+  .hand .card .cost, .deck-grid .card .cost {
+    top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px;
+  }
   .hand .card .power, .deck-grid .card .power {
-    left: auto; right: 5px; top: 39px; bottom: auto;
-    width: 15px; height: 15px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 9px;
+    left: auto; top: auto; bottom: -6px; right: -6px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 10px;
     display: flex; align-items: center; justify-content: center;
   }
   .hand .card .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
