@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TCG Prototype</title>
+<title>Rival Princes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -23,7 +26,25 @@
   /* ---- screens ---- */
   .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .screen.hidden { display: none; }
-  #menu-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
+  #menu-screen {
+    position: relative;
+    margin: -0.75rem; /* full-bleed behind body padding */
+    background-color: #f2ecdd; /* rice paper fallback until menu-bg.webp lands */
+    background-image: url('assets/menu-bg.webp');
+    background-size: cover;
+    background-position: center top;
+    align-items: stretch; justify-content: flex-start;
+  }
+  #menu-title {
+    font-family: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive, serif;
+    font-size: 4rem; font-weight: 400; color: #1c1915;
+    text-align: center; margin-top: 3.2rem;
+    text-shadow: 0 1px 2px rgba(242,236,221,0.6);
+  }
+  #menu-buttons {
+    position: absolute; right: 1.4rem; bottom: 9rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
   #loading-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
   #load-track {
     width: 70%; max-width: 280px; height: 10px; border-radius: 5px;
@@ -37,16 +58,16 @@
   #game-title { font-size: 2.4rem; font-weight: 800; color: #ffd75e; }
   #game-subtitle { font-size: 0.95rem; opacity: 0.6; margin-top: -0.7rem; }
   .menu-btn {
-    font-size: 1.3rem; font-weight: 700;
-    width: 220px; padding: 1rem;
-    border: none; border-radius: 16px;
+    font-family: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive, serif;
+    font-size: 1.55rem; color: #1c1915;
+    min-width: 215px; padding: 0.75rem 1.4rem;
+    background: rgba(250, 247, 238, 0.88);
+    border: 2px solid #1c1915; border-radius: 6px;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
   .menu-btn:active { transform: scale(0.97); }
-  #play-btn { background: #4caf50; color: #fff; }
-  #deck-btn { background: #3a3a5e; color: #eee; border: 1px solid #555; }
   #deck-screen { overflow: hidden; }
   #deck-screen > * { flex: 0 0 auto; }
   #deck-area { flex: 1 1 0; min-height: 0; overflow-y: auto; touch-action: pan-y; }
@@ -583,19 +604,20 @@
 </head>
 <body oncontextmenu="return false">
   <div id="loading-screen" class="screen">
-    <h1 id="game-title">TCG Prototype</h1>
+    <h1 id="game-title">Rival Princes</h1>
     <p id="game-subtitle">a game of ministries &amp; income</p>
     <div id="load-track"><div id="load-fill"></div></div>
     <p id="load-status">Loading card art&hellip;</p>
   </div>
 
   <div id="menu-screen" class="screen hidden">
-    <h1 id="game-title">TCG Prototype</h1>
-    <p id="game-subtitle">a game of ministries &amp; income</p>
-    <button id="play-btn" class="menu-btn" type="button">Play</button>
-    <button id="pack-btn" class="menu-btn" type="button">Open Pack</button>
-    <button id="deck-btn" class="menu-btn" type="button">Deck</button>
-    <button id="collection-btn" class="menu-btn" type="button">Collection</button>
+    <h1 id="menu-title">Rival Princes</h1>
+    <div id="menu-buttons">
+      <button id="play-btn" class="menu-btn" type="button">Play</button>
+      <button id="pack-btn" class="menu-btn" type="button">Open Pack</button>
+      <button id="deck-btn" class="menu-btn" type="button">Deck</button>
+      <button id="collection-btn" class="menu-btn" type="button">Collection</button>
+    </div>
   </div>
 
   <div id="game-screen" class="screen hidden">
@@ -1325,7 +1347,7 @@
     }
 
     function preloadArt(done) {
-      var total = SET1.length, loaded = 0;
+      var total = SET1.length + 1, loaded = 0;
       var start = Date.now();
       var fill = document.getElementById('load-fill');
       var status = document.getElementById('load-status');
@@ -1339,12 +1361,14 @@
           setTimeout(done, wait);
         }
       }
-      SET1.forEach(function (card) {
+      function loadSrc(src) {
         var img = new Image();
         img.onload = tick;
         img.onerror = tick;
-        img.src = artUrl(card.uid);
-      });
+        img.src = src;
+      }
+      SET1.forEach(function (card) { loadSrc(artUrl(card.uid)); });
+      loadSrc('assets/menu-bg.webp');
     }
 
     var FILTERS = [
