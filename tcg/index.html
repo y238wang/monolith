@@ -725,7 +725,7 @@
       { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 16, ministry: 0, rarity: 'C', text: '' },
       { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 7, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
       { uid: 'veteran-sergeant', name: 'Drillmaster', type: 'agent', cost: 4, power: 8, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Militia.' },
-      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 6, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin.' },
+      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 6, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
       { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 15, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
       // Commerce agents (11)
       { uid: 'peddler', name: 'Peddler', type: 'agent', cost: 2, power: 6, ministry: 1, rarity: 'C', text: '' },
@@ -1134,7 +1134,7 @@
             toast('Smuggler: tap a card in hand to discard');
           }
           break;
-        case 'raider': oppCoins = Math.max(0, oppCoins - 1); toast('Raider: opponent loses 1 coin'); break;
+        case 'raider': pendingTax += 1; toast('Raider: opponent loses 1 coin next turn'); break;
         case 'sentry': pendingTax += 1; toast('Sentry: opponent loses 1 coin next turn'); break;
         case 'quartermaster': pendingTax += 2; toast('Quartermaster: opponent loses 2 coins next turn'); break;
         case 'double-agent': showReveal(); break;
