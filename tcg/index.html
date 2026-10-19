@@ -49,7 +49,7 @@
   #deck-btn { background: #3a3a5e; color: #eee; border: 1px solid #555; }
   #deck-screen { overflow: hidden; }
   #deck-screen > * { flex: 0 0 auto; }
-  #deck-area { flex: 0 1 auto; max-height: 30vh; overflow-y: auto; touch-action: pan-y; }
+  #deck-area { flex: 1 1 0; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #pool-area { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #deck-head, #collection-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
   #deck-head h2, #collection-head h2 { font-size: 1.3rem; flex: 1; }
@@ -142,8 +142,8 @@
   }
   .hand .card .ctext { top: 38px; font-size: 6px; -webkit-line-clamp: 2; }
   .slot .card .ctext { display: none; }
-  #deck-tools { margin-bottom: 0.5rem; }
-  #deck-reset {
+  #deck-tools { margin-bottom: 0.5rem; display: flex; gap: 0.5rem; }
+  #deck-reset, #deck-clear {
     font-size: 0.8rem; font-weight: 600;
     padding: 0.45rem 0.9rem;
     border: 1px solid #555; border-radius: 10px;
@@ -607,14 +607,12 @@
     <div id="side-panel">
       <div id="opp-stats">
         <span class="opp-label">opponent</span>
-        <p id="opp-wealth"></p>
-        <p id="opp-coins"></p>
+        <p id="opp-econ"></p>
       </div>
       <p id="turn-counter">Turn 1 of 6</p>
-      <p id="wealth"></p>
-      <p id="coins"></p>
+      <p id="econ"></p>
       <button id="end-turn" type="button">End Turn</button>
-      <div id="discard-slot"><span>discard</span><b>+1 coin</b></div>
+      <div id="discard-slot"><span>discard</span><b>+1 🪙</b></div>
     </div>
   </section>
 
@@ -639,6 +637,7 @@
     </div>
     <div id="deck-tools">
       <button id="deck-reset" type="button">Reset to starter</button>
+      <button id="deck-clear" type="button">Clear</button>
     </div>
     <div class="zone-label">Your deck <span class="db-hint">(drag cards here to add &middot; drag out to remove)</span></div>
     <div id="deck-area"></div>
@@ -700,10 +699,10 @@
     ];
     var MAX_PER_MINISTRY = 3;
     var BONUS_BADGE = ['\u2694\uFE0F', '\uD83E\uDE99', '\uD83C\uDC0F']; // militia / commerce / intrigue
-    var SLOT_HINT = ['+tax', '+wealth', '+draw'];
+    var SLOT_HINT = ['+tax', '+2 wealth', '+draw'];
     var BONUS_MSG = [
       'Militia bonus: tax +1 going forward',
-      'Commerce bonus: +1 wealth each turn',
+      'Commerce bonus: +2 wealth',
       'Intrigue bonus: draw +1 card each turn'
     ];
 
@@ -803,7 +802,7 @@
       try {
         var c = JSON.parse(localStorage.getItem('tcg.collection.v1'));
         var d = JSON.parse(localStorage.getItem('tcg.deck.v1'));
-        if (c && d && Array.isArray(d) && d.length === DECK_SIZE) {
+        if (c && d && Array.isArray(d)) {
           var counts = {};
           ok = d.every(function (uid) {
             if (!cardDef[uid]) return false;
@@ -1067,10 +1066,8 @@
     function render() {
       document.getElementById('turn-counter').textContent =
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
-      document.getElementById('opp-wealth').textContent = gameOver ? '' : 'Wealth: ' + oppWealth;
-      document.getElementById('opp-coins').textContent = gameOver ? '' : 'Coins: ' + oppCoins;
-      document.getElementById('wealth').textContent = gameOver ? '' : 'Wealth: ' + playerWealth;
-      document.getElementById('coins').textContent = gameOver ? '' : 'Coins: ' + playerCoins;
+      document.getElementById('opp-econ').textContent = gameOver ? '' : '🪙 ' + oppCoins + ' / 🏦 ' + oppWealth;
+      document.getElementById('econ').textContent = gameOver ? '' : '🪙 ' + playerCoins + ' / 🏦 ' + playerWealth;
       document.getElementById('end-turn').textContent =
         turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'End Turn';
       renderBoard();
@@ -1157,7 +1154,7 @@
         oppBoard[m].splice(idx, 1);
         playerBoard[m].push(target);
         toast('Agent stolen!');
-        if (playerBoard[m].length === 2) toast(BONUS_MSG[m]);
+        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); if (m === 1) playerWealth += 2; }
       }
       return true;
     }
@@ -1268,9 +1265,9 @@
 
     function startTurn() {
       // income: wealth grows, coins refill to wealth (no carryover)
-      playerWealth += 1 + (hasBonus(playerBoard, 1) ? 1 : 0);
+      playerWealth += 1;
       playerCoins = playerWealth;
-      oppWealth += 1 + (hasBonus(oppBoard, 1) ? 1 : 0);
+      oppWealth += 1;
       oppCoins = oppWealth;
       // delayed taxes from Sentry / Quartermaster
       if (pendingTax > 0) {
@@ -1470,7 +1467,6 @@
 
     function tryAddToDeck(uid) {
       var counts = deckCounts();
-      if (deckList.length >= DECK_SIZE) { toast('Deck is full (' + DECK_SIZE + ' cards)'); return; }
       if ((counts[uid] || 0) >= MAX_COPIES) { toast('Max ' + MAX_COPIES + ' copies per card'); return; }
       if ((counts[uid] || 0) >= (collection[uid] || 0)) { toast('You own no more copies'); return; }
       deckList.push(uid);
@@ -1583,7 +1579,9 @@
         var open = validColumns(oppBoard, card);
         oppHand.splice(oppHand.indexOf(card), 1);
         oppCoins -= card.cost;
-        oppBoard[open[Math.floor(Math.random() * open.length)]].push(card);
+        var om = open[Math.floor(Math.random() * open.length)];
+        oppBoard[om].push(card);
+        if (oppBoard[om].length === 2 && om === 1) oppWealth += 2;
       }
     }
 
@@ -1827,7 +1825,7 @@
           playerHand.splice(drag.index, 1);
           playerCoins -= drag.card.cost;
           playerBoard[pm].push(drag.card);
-          if (playerBoard[pm].length === 2) toast(BONUS_MSG[pm]);
+          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); if (pm === 1) playerWealth += 2; }
           onPlay(drag.card);
         }
       }
@@ -1898,6 +1896,12 @@
       saveProgress();
       renderDeckBuilder();
       toast('Deck reset to starter');
+    });
+    document.getElementById('deck-clear').addEventListener('click', function () {
+      deckList = [];
+      saveProgress();
+      renderDeckBuilder();
+      toast('Deck cleared');
     });
     document.getElementById('reveal-close').addEventListener('click', function () {
       document.getElementById('reveal').classList.add('hidden');
