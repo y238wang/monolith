@@ -275,15 +275,17 @@
     flex-direction: column;
     gap: 4px;
     align-items: center;
-    justify-content: flex-start;
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-height: 0;
   }
   .slot {
-    width: 46px;
-    height: 64px;
+    width: 100%;
+    max-width: 120px;
+    margin: 0 auto;
     border-radius: 7px;
     border: 2px dashed #444;
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-height: 0;
     position: relative;
   }
   .slot.filled { border-color: transparent; }
@@ -320,7 +322,7 @@
     pointer-events: none;
   }
   .col-head {
-    margin: auto 0;
+    margin: 6px 0;
     text-align: center;
     font-size: 0.62rem;
     text-transform: uppercase;
@@ -379,7 +381,7 @@
     text-align: center; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.65;
   }
   .hand .card .ctype, .slot .card .ctype, .card.drag-ghost .ctype { display: none; }
-  .slot .card .art { display: none; }
+  .slot .card .art { display: flex; top: 14%; height: 58%; left: 6%; right: 6%; }
   /* long-press zoom modal */
   #zoom-modal {
     position: fixed; inset: 0; z-index: 2600;
@@ -435,14 +437,19 @@
   .card.face-up.min-red { background: #f8d7da; border-color: #e94560; }
   .card.face-up.min-yellow { background: #fff3cd; border-color: #d4a017; }
   .card.face-up.min-blue { background: #cfe2ff; border-color: #4a7bff; }
-  /* column cards (compact, overlapping) */
+  /* column cards */
   .slot .card { width: 100%; height: 100%; }
-  .slot .card .cname { font-size: 6px; }
-  .slot .card .cost { top: 11px; width: 15px; height: 15px; font-size: 9px; left: 3px; }
-  .slot .card .power { font-size: 16px; }
+  .slot .card .cname { font-size: 7px; }
+  .slot .card .cost { top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px; }
+  .slot .card .power {
+    left: auto; top: auto; bottom: -6px; right: -6px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #b03a2e; color: #fff; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
   .slot .card.face-up { cursor: default; }
   .slot .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
-  .slot .card.opp .power { color: #bbb; }
+  .slot .card.opp .cname { color: #ddd; }
   /* drag ghost: explicit sizing, since it's detached from .hand */
   .card.drag-ghost {
     position: fixed;
@@ -536,19 +543,21 @@
   }
   #new-game:active { transform: scale(0.97); }
   #discard-slot {
-    width: 68px;
+    width: 64px;
+    aspect-ratio: 5 / 7;
     border: 2px dashed #666;
     border-radius: 10px;
-    padding: 6px 2px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 2px;
     font-size: 0.62rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     opacity: 0.9;
     margin-top: 0.5rem;
+    touch-action: none;
   }
   #discard-slot b { color: #ffd75e; font-size: 0.8rem; }
   #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
@@ -954,7 +963,12 @@
 
     function oppCardEl(card) {
       var c = document.createElement('div');
-      c.className = 'card opp' + colorClass(card);
+      c.className = 'card opp';
+      var name = document.createElement('div');
+      name.className = 'cname';
+      name.textContent = card.name;
+      c.appendChild(name);
+      c.appendChild(artEl(card.uid));
       var power = document.createElement('div');
       power.className = 'power';
       power.textContent = agentPower(card);
@@ -974,7 +988,8 @@
 
         var oppSlots = document.createElement('div');
         oppSlots.className = 'col-slots';
-        for (var s = 0; s < MAX_PER_MINISTRY; s++) {
+        for (var v = 0; v < MAX_PER_MINISTRY; v++) {
+          var s = MAX_PER_MINISTRY - 1 - v; /* first-filled slot renders nearest the middle */
           var oslot = document.createElement('div');
           oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
           if (s === 1 && !oppBoard[m][s]) oslot.appendChild(slotHint(m));
