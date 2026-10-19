@@ -546,7 +546,8 @@
   }
   .income-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .side-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
-  .income-num { font-size: 1.05rem; font-weight: 800; color: #ffd75e; }
+  .income-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; color: #ffd75e; white-space: nowrap; }
+  .income-tag b { font-size: 0.9rem; }
   .income-coins {
     display: flex; flex-direction: column; flex-wrap: wrap; gap: 3px;
     max-height: 115px; align-content: center;
@@ -606,21 +607,21 @@
   <section id="middle">
     <div id="income-panel">
       <div class="income-side">
+        <span class="income-tag">income <b id="opp-income-num"></b></span>
         <span class="side-label">opponent</span>
-        <span class="income-num" id="opp-income-num"></span>
         <div id="opp-income-coins" class="income-coins"></div>
       </div>
       <div class="income-side">
         <div id="income-coins" class="income-coins"></div>
-        <span class="income-num" id="income-num"></span>
         <span class="side-label">you</span>
+        <span class="income-tag">income <b id="income-num"></b></span>
       </div>
     </div>
     <div id="board"></div>
     <div id="side-panel">
       <p id="turn-counter">Turn 1 of 6</p>
       <button id="end-turn" type="button">End Turn</button>
-      <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b>+1</b></span></div>
+      <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
     </div>
   </section>
 
@@ -897,13 +898,14 @@
       return n;
     }
 
-    function hasAuctioneer() {
+    function sellValue() {
+      var n = 1;
       for (var m = 0; m < MINISTRIES.length; m++) {
         for (var i = 0; i < playerBoard[m].length; i++) {
-          if (playerBoard[m][i].uid === 'auctioneer') return true;
+          if (playerBoard[m][i].uid === 'auctioneer') n += 1;
         }
       }
-      return false;
+      return n;
     }
 
     function colorClass(card) {
@@ -1091,6 +1093,7 @@
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
       document.getElementById('discard-slot').classList.toggle('used', discardUsed);
+      document.getElementById('sell-num').textContent = '+' + sellValue();
     }
 
     var ITEM_FX = {
@@ -1812,8 +1815,7 @@
       if (commit && drag.target) {
         if (drag.target.type === 'discard') {
           playerHand.splice(drag.index, 1);
-          playerCoins += 1;
-          if (hasAuctioneer()) playerCoins += 1;
+          playerCoins += sellValue();
           if (drag.card.type === 'item' && ITEM_FX[drag.card.uid]) ITEM_FX[drag.card.uid]();
           discardUsed = true;
         } else if (drag.target.type === 'equip') {
