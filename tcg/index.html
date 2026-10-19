@@ -762,7 +762,7 @@
       { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 12, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
       // Items (5)
       { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 2 extra coins.' },
-      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 2 coins.' },
+      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 1 coin at the start of your next turn.' },
       { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
       { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income.' },
       { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your income.' },
@@ -786,7 +786,7 @@
     var DECK_SIZE = 15;
 
     var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
-    var pendingTax, pendingTarget, pendingDiscard;
+    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
 
@@ -1098,7 +1098,7 @@
 
     var ITEM_FX = {
       'coin-pouch': function () { playerCoins += 2; toast('Coin Pouch: +2 coins'); },
-      'smoke-bomb': function () { oppCoins = Math.max(0, oppCoins - 2); toast('Smoke Bomb: opponent loses 2 coins'); },
+      'smoke-bomb': function () { pendingSmoke += 1; toast('Smoke Bomb: opponent loses 1 coin next turn'); },
       'sealed-letter': function () { draw(playerDeck, playerHand); toast('Sealed Letter: drew a card'); },
       'abacus': function () { playerIncome += 1; toast('Abacus: +1 income'); },
       'dragon-pearl': function () { playerCoins += playerIncome; toast('Dragon Pearl: +' + playerIncome + ' coins'); }
@@ -1281,12 +1281,19 @@
       playerCoins = playerIncome;
       oppIncome += 1;
       oppCoins = oppIncome;
-      // delayed taxes from Sentry / Quartermaster
+      // delayed taxes from Sentry / Provisioner
       if (pendingTax > 0) {
         var pt = Math.min(pendingTax, oppCoins);
         oppCoins -= pt;
         if (pt > 0) toast('Delayed tax: opponent loses ' + pt + ' coin' + (pt > 1 ? 's' : ''));
         pendingTax = 0;
+      }
+      // delayed smoke bomb
+      if (pendingSmoke > 0) {
+        var ps = Math.min(pendingSmoke, oppCoins);
+        oppCoins -= ps;
+        if (ps > 0) toast('Smoke Bomb: opponent loses ' + ps + ' coin' + (ps > 1 ? 's' : ''));
+        pendingSmoke = 0;
       }
       // tax: each militia bonus adds +1; lesser militia power pays
       var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0) +
@@ -1557,7 +1564,7 @@
       gameOver = false;
       playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
       oppIncome = 1; oppCoins = 1;
-      pendingTax = 0; pendingTarget = null; pendingDiscard = false;
+      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false;
       discardUsed = false;
       playerDeck = buildDeck(deckList); playerHand = [];
       oppDeck = buildDeck(AI_DECK); oppHand = [];
