@@ -246,7 +246,7 @@
   #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
   #board { flex: 1; display: flex; gap: 8px; min-width: 0; }
   #side-panel {
-    width: 92px;
+    width: 76px;
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
@@ -289,25 +289,6 @@
     position: relative;
   }
   .slot.filled { border-color: transparent; }
-  .slot-badge {
-    position: absolute;
-    top: -7px; right: -7px;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: #2a2a40;
-    border: 1px solid #666;
-    font-size: 11px;
-    line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0.35;
-    z-index: 2;
-    pointer-events: none;
-  }
-  .slot-badge.on {
-    opacity: 1;
-    border-color: #ffd75e;
-    box-shadow: 0 0 6px rgba(255, 215, 94, 0.7);
-  }
   .slot-hint {
     position: absolute;
     inset: 0;
@@ -477,12 +458,6 @@
   #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border-color: #555; }
 
   #turn-counter { font-size: 1.05rem; font-weight: 700; }
-  #coins { font-size: 0.95rem; font-weight: 600; color: #ffd75e; }
-  #wealth { font-size: 0.95rem; font-weight: 600; color: #9fd6a4; }
-  #opp-stats { font-size: 0.72rem; opacity: 0.7; display: flex; flex-direction: column; gap: 0.15rem; }
-  #opp-stats .opp-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.58rem; opacity: 0.8; }
-  #opp-wealth { font-weight: 600; color: #9fd6a4; }
-  #opp-coins { font-weight: 600; color: #ffd75e; }
   #end-turn {
     font-size: 0.95rem;
     font-weight: 700;
@@ -560,12 +535,21 @@
     touch-action: none;
   }
   #discard-slot b { color: #ffd75e; font-size: 0.8rem; }
+  .discard-reward { display: flex; align-items: center; gap: 4px; }
   #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
   #discard-slot.used { opacity: 0.3; }
-  /* ---- coin rows: coin count = wealth, grayed = spent ---- */
-  .coin-row {
-    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-    gap: 3px; padding: 3px 0; min-height: 24px;
+  /* ---- income panel: income number + vertical coin stacks (5 per column) ---- */
+  #income-panel {
+    width: 52px; flex: 0 0 auto;
+    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+    padding: 2px 0;
+  }
+  .income-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .side-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
+  .income-num { font-size: 1.05rem; font-weight: 800; color: #ffd75e; }
+  .income-coins {
+    display: flex; flex-direction: column; flex-wrap: wrap; gap: 3px;
+    max-height: 115px; align-content: center;
   }
   .coin {
     width: 20px; height: 20px; border-radius: 50%; flex: 0 0 auto;
@@ -579,7 +563,6 @@
     background: #1a1a2e;
     box-shadow: inset 0 0 0 1px rgba(122, 84, 10, 0.7);
   }
-  .coin.spent { filter: grayscale(0.95) brightness(0.55); }
   #toast {
     position: fixed;
     top: 12px; left: 50%;
@@ -600,14 +583,14 @@
 <body oncontextmenu="return false">
   <div id="loading-screen" class="screen">
     <h1 id="game-title">TCG Prototype</h1>
-    <p id="game-subtitle">a game of ministries &amp; wealth</p>
+    <p id="game-subtitle">a game of ministries &amp; income</p>
     <div id="load-track"><div id="load-fill"></div></div>
     <p id="load-status">Loading card art&hellip;</p>
   </div>
 
   <div id="menu-screen" class="screen hidden">
     <h1 id="game-title">TCG Prototype</h1>
-    <p id="game-subtitle">a game of ministries &amp; wealth</p>
+    <p id="game-subtitle">a game of ministries &amp; income</p>
     <button id="play-btn" class="menu-btn" type="button">Play</button>
     <button id="pack-btn" class="menu-btn" type="button">Open Pack</button>
     <button id="deck-btn" class="menu-btn" type="button">Deck</button>
@@ -618,23 +601,30 @@
   <section id="opp-zone">
     <div class="zone-label">Opponent &middot; <span id="opp-deck-count"></span></div>
     <div id="opp-hand-strip"></div>
-    <div id="opp-coins-row" class="coin-row"></div>
   </section>
 
   <section id="middle">
+    <div id="income-panel">
+      <div class="income-side">
+        <span class="side-label">opponent</span>
+        <span class="income-num" id="opp-income-num"></span>
+        <div id="opp-income-coins" class="income-coins"></div>
+      </div>
+      <div class="income-side">
+        <div id="income-coins" class="income-coins"></div>
+        <span class="income-num" id="income-num"></span>
+        <span class="side-label">you</span>
+      </div>
+    </div>
     <div id="board"></div>
     <div id="side-panel">
-      <div id="opp-stats">
-        <span class="opp-label">opponent</span>
-      </div>
       <p id="turn-counter">Turn 1 of 6</p>
       <button id="end-turn" type="button">End Turn</button>
-      <div id="discard-slot"><span>discard</span><b>+1 🪙</b></div>
+      <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b>+1</b></span></div>
     </div>
   </section>
 
   <section id="player-zone">
-    <div id="player-coins-row" class="coin-row"></div>
     <div class="zone-label">Your hand &middot; <span id="player-deck-count"></span></div>
     <div class="hand" id="player-hand"></div>
   </section>
@@ -716,11 +706,10 @@
       { name: 'Intrigue', color: 'blue' }
     ];
     var MAX_PER_MINISTRY = 3;
-    var BONUS_BADGE = ['\u2694\uFE0F', '\uD83E\uDE99', '\uD83C\uDC0F']; // militia / commerce / intrigue
-    var SLOT_HINT = ['+tax', '+2 wealth', '+draw'];
+    var SLOT_HINT = ['tax +1', 'income +1', 'draw +1'];
     var BONUS_MSG = [
       'Militia bonus: tax +1 going forward',
-      'Commerce bonus: +2 wealth',
+      'Commerce bonus: +1 income',
       'Intrigue bonus: draw +1 card each turn'
     ];
 
@@ -745,10 +734,10 @@
       { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 9, ministry: 1, rarity: 'C', text: '' },
       { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 12, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
       { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 16, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 8, ministry: 1, rarity: 'U', text: 'On play: +1 wealth.' },
+      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 8, ministry: 1, rarity: 'U', text: 'On play: +1 income.' },
       { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 4, ministry: 1, rarity: 'U', text: 'On play: draw a card, then discard a card.' },
       { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 6, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
-      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 12, ministry: 1, rarity: 'R', text: 'On play: double your wealth.' },
+      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 12, ministry: 1, rarity: 'R', text: 'On play: double your income.' },
       // Intrigue agents (11)
       { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 6, ministry: 2, rarity: 'C', text: '' },
       { uid: 'spymaster', name: 'Spymaster', type: 'agent', cost: 4, power: 12, ministry: 2, rarity: 'C', text: '' },
@@ -774,8 +763,8 @@
       { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 2 extra coins.' },
       { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 2 coins.' },
       { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
-      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 wealth.' },
-      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your wealth.' },
+      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income.' },
+      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your income.' },
       // Equips (8)
       { uid: 'iron-arms', name: 'Iron Bracers', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
@@ -795,7 +784,7 @@
     var MAX_COPIES = 3;
     var DECK_SIZE = 15;
 
-    var turn, gameOver, playerWealth, playerCoins, oppWealth, oppCoins, discardUsed;
+    var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
     var pendingTax, pendingTarget, pendingDiscard;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
@@ -1017,7 +1006,6 @@
             }
             oslot.appendChild(oc);
           }
-          if (s === 1) oslot.appendChild(slotBadge(m, hasBonus(oppBoard, m)));
           oppSlots.appendChild(oslot);
         }
         col.appendChild(oppSlots);
@@ -1055,7 +1043,6 @@
               pslot.appendChild(eb);
             }
           }
-          if (q === 1) pslot.appendChild(slotBadge(m, hasBonus(playerBoard, m)));
           playerSlots.appendChild(pslot);
         }
         col.appendChild(playerSlots);
@@ -1064,18 +1051,12 @@
       }
     }
 
-    function renderCoinRow(el, wealth, coins) {
+    function renderIncomeCoins(el, coins) {
       el.innerHTML = '';
-      var bright = Math.min(coins, wealth);
-      for (var i = 0; i < wealth; i++) {
+      for (var i = 0; i < coins; i++) {
         var c = document.createElement('span');
-        c.className = 'coin' + (i < bright ? '' : ' spent');
+        c.className = 'coin'; /* spent coins vanish; no gray-out */
         el.appendChild(c);
-      }
-      for (var j = wealth; j < coins; j++) {
-        var x = document.createElement('span');
-        x.className = 'coin'; /* extras vanish when spent, never gray */
-        el.appendChild(x);
       }
     }
 
@@ -1099,8 +1080,10 @@
     function render() {
       document.getElementById('turn-counter').textContent =
         gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
-      renderCoinRow(document.getElementById('opp-coins-row'), oppWealth, oppCoins);
-      renderCoinRow(document.getElementById('player-coins-row'), playerWealth, playerCoins);
+      renderIncomeCoins(document.getElementById('opp-income-coins'), oppCoins);
+      renderIncomeCoins(document.getElementById('income-coins'), playerCoins);
+      document.getElementById('opp-income-num').textContent = gameOver ? '' : oppIncome;
+      document.getElementById('income-num').textContent = gameOver ? '' : playerIncome;
       document.getElementById('end-turn').textContent =
         turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'End Turn';
       renderBoard();
@@ -1114,8 +1097,8 @@
       'coin-pouch': function () { playerCoins += 2; toast('Coin Pouch: +2 coins'); },
       'smoke-bomb': function () { oppCoins = Math.max(0, oppCoins - 2); toast('Smoke Bomb: opponent loses 2 coins'); },
       'sealed-letter': function () { draw(playerDeck, playerHand); toast('Sealed Letter: drew a card'); },
-      'abacus': function () { playerWealth += 1; toast('Abacus: +1 wealth'); },
-      'dragon-pearl': function () { playerCoins += playerWealth; toast('Dragon Pearl: +' + playerWealth + ' coins'); }
+      'abacus': function () { playerIncome += 1; toast('Abacus: +1 income'); },
+      'dragon-pearl': function () { playerCoins += playerIncome; toast('Dragon Pearl: +' + playerIncome + ' coins'); }
     };
 
     function oppHasAgents() {
@@ -1140,7 +1123,7 @@
         case 'spy': draw(playerDeck, playerHand); toast('Drew a card'); break;
         case 'mastermind': draw(playerDeck, playerHand); draw(playerDeck, playerHand); toast('Drew 2 cards'); break;
         case 'diplomat': playerCoins += 1; draw(playerDeck, playerHand); toast('Diplomat: +1 coin, drew a card'); break;
-        case 'treasurer': playerWealth += 1; toast('Treasurer: +1 wealth'); break;
+        case 'treasurer': playerIncome += 1; toast('Treasurer: +1 income'); break;
         case 'smuggler':
           draw(playerDeck, playerHand);
           if (playerHand.length > 0) {
@@ -1187,7 +1170,7 @@
         oppBoard[m].splice(idx, 1);
         playerBoard[m].push(target);
         toast('Agent stolen!');
-        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); if (m === 1) playerWealth += 2; }
+        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); if (m === 1) playerIncome += 1; }
       }
       return true;
     }
@@ -1274,13 +1257,6 @@
 
     function hasBonus(board, m) { return board[m].length >= 2; }
 
-    function slotBadge(m, on) {
-      var b = document.createElement('span');
-      b.className = 'slot-badge' + (on ? ' on' : '');
-      b.textContent = BONUS_BADGE[m];
-      return b;
-    }
-
     function slotHint(m) {
       var h = document.createElement('span');
       h.className = 'slot-hint';
@@ -1297,11 +1273,11 @@
     }
 
     function startTurn() {
-      // income: wealth grows, coins refill to wealth (no carryover)
-      playerWealth += 1;
-      playerCoins = playerWealth;
-      oppWealth += 1;
-      oppCoins = oppWealth;
+      // income phase: income +1, coins refill to income (no carryover)
+      playerIncome += 1;
+      playerCoins = playerIncome;
+      oppIncome += 1;
+      oppCoins = oppIncome;
       // delayed taxes from Sentry / Quartermaster
       if (pendingTax > 0) {
         var pt = Math.min(pendingTax, oppCoins);
@@ -1576,8 +1552,8 @@
     function newGame() {
       turn = 1;
       gameOver = false;
-      playerWealth = 1; playerCoins = 1; // turn 1: no income phase yet
-      oppWealth = 1; oppCoins = 1;
+      playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
+      oppIncome = 1; oppCoins = 1;
       pendingTax = 0; pendingTarget = null; pendingDiscard = false;
       discardUsed = false;
       playerDeck = buildDeck(deckList); playerHand = [];
@@ -1614,7 +1590,7 @@
         oppCoins -= card.cost;
         var om = open[Math.floor(Math.random() * open.length)];
         oppBoard[om].push(card);
-        if (oppBoard[om].length === 2 && om === 1) oppWealth += 2;
+        if (oppBoard[om].length === 2 && om === 1) oppIncome += 1;
       }
     }
 
@@ -1858,7 +1834,7 @@
           playerHand.splice(drag.index, 1);
           playerCoins -= drag.card.cost;
           playerBoard[pm].push(drag.card);
-          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); if (pm === 1) playerWealth += 2; }
+          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); if (pm === 1) playerIncome += 1; }
           onPlay(drag.card);
         }
       }
