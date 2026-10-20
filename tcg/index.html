@@ -125,44 +125,25 @@
   .ccell .owned { font-size: 0.68rem; font-weight: 700; color: #9fd6a4; }
   .ccell.unowned .owned { color: #777; }
   .ccell.unowned .card.big { filter: grayscale(1); opacity: 0.45; }
-  .card.big { width: 68px; height: 96px; background: #f0e6d2; color: #222; }
+  .card.big { width: 68px; height: 96px; padding: 3px; }
   .card.big .cname { font-size: 7px; }
-  .card.big .cost { top: -7px; left: -7px; width: 19px; height: 19px; font-size: 11px; }
-  .card.big .power {
-    left: auto; top: auto; bottom: -7px; right: -7px;
-    width: 19px; height: 19px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 11px;
-    display: flex; align-items: center; justify-content: center;
+  .card.big .ctype { font-size: 5px; }
+  .card.big .ctext {
+    font-size: 5.5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .card.big .art { top: 11px; height: 58px; }
-  .card.big .ctype { top: 71px; font-size: 5px; }
-  .card.big .ctext { top: 78px; font-size: 5.5px; -webkit-line-clamp: 2; }
+  .card.big .tcoin { width: 15px; height: 15px; }
+  .card.big .tcoin + .tcoin { margin-top: -5px; }
+  .card.big .power { width: 19px; height: 19px; font-size: 11px; }
   /* drag ghost mirrors the hand layout (detached from .hand) */
-  .card.drag-ghost .art { top: 10px; left: 3px; right: 3px; height: 47px; }
   .card.drag-ghost .cname { font-size: 6.5px; }
-  .card.drag-ghost .cost { top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px; }
-  .card.drag-ghost .power {
-    left: auto; top: auto; bottom: -6px; right: -6px;
-    width: 17px; height: 17px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 10px;
-    display: flex; align-items: center; justify-content: center;
+  .card.drag-ghost .ctext {
+    font-size: 5.5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .card.drag-ghost .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
-  .card.big.min-red { background: #f8d7da; }
-  .card.big.min-yellow { background: #fff3cd; }
-  .card.big.min-blue { background: #cfe2ff; }
-  .card.big.type-item { background: #e9e0f5; }
-  .card.big.type-equip { background: #d9edec; }
-  .card.big.rar-C { border-color: #888; }
-  .card.big.rar-U { border-color: #4a7bff; }
-  .card.big.rar-R { border-color: #d4a017; }
-  .card .ctext {
-    position: absolute; left: 3px; right: 3px;
-    text-align: center; line-height: 1.3; opacity: 0.9;
-    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-  }
-  .hand .card .ctext { top: 38px; font-size: 6px; -webkit-line-clamp: 2; }
-  .slot .card .ctext { display: none; }
+  .card.drag-ghost .tcoin { width: 13px; height: 13px; }
+  .card.drag-ghost .tcoin + .tcoin { margin-top: -4px; }
+  .card.drag-ghost .power { width: 17px; height: 17px; font-size: 10px; }
   #deck-tools { margin-bottom: 0.5rem; display: flex; gap: 0.5rem; }
   #deck-reset, #deck-clear {
     font-size: 0.8rem; font-weight: 600;
@@ -340,50 +321,82 @@
   .col-head .tally b.you { color: #8fd694; }
   .col-head .tally b.opp { color: #f0a0a0; }
 
-  /* ---- cards ---- */
+  /* ---- cards (full-art: metal rarity frame, coin-stack cost, red-orb power) ---- */
   .card {
-    border-radius: 7px;
-    border: 2px solid #888;
+    border-radius: 9px;
+    padding: 4px;
+    background: #8f7448; /* dull bronze = common; lustrous silver/gold per rarity below */
     flex: 0 0 auto;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
   }
-  .card .cname {
-    position: absolute; top: 2px; left: 0; right: 0;
-    text-align: center; font-weight: 700;
-    padding: 0 2px; white-space: nowrap; overflow: hidden;
+  .card.rar-U { background: linear-gradient(155deg, #f3f5f8, #b7bdc5 32%, #e9edf2 52%, #a9b0b9 74%, #dfe4ea); }
+  .card.rar-R { background: linear-gradient(155deg, #fbdf84, #cb9c2e 32%, #f7e38d 52%, #bc8c22 74%, #f1d67a); }
+  .card .cardface {
+    position: relative; width: 100%; height: 100%;
+    border-radius: 5px; overflow: hidden;
+    background: #1c1a24;
   }
-  .card .cost {
-    position: absolute; left: 3px;
-    border-radius: 50%;
-    background: #d4a017; color: #fff;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .card .power {
-    position: absolute; bottom: 1px; left: 0; right: 0;
-    text-align: center; font-weight: 800;
-  }
-  /* art window (populated when assets/cards/set1/<uid>.webp exists) */
+  /* full-bleed art, crop biased toward the top so portrait busts keep their heads */
   .card .art {
-    position: absolute; left: 3px; right: 3px; top: 10px; height: 47px;
-    border-radius: 4px; overflow: hidden;
+    position: absolute; inset: 0;
     background: linear-gradient(135deg, #2b2b52, #17172e);
     display: flex; align-items: center; justify-content: center;
   }
   .card .art .art-ph { color: #d4a017; font-size: 14px; opacity: 0.7; }
   .card .art img {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 15%;
     pointer-events: none; /* keep iOS from hijacking long-press into a native image drag */
   }
+  /* name banner floating over the art */
+  .card .cname {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+    text-align: center; font-weight: 700;
+    padding: 2px 3px; white-space: nowrap; overflow: hidden;
+  }
+  /* type + ability scrim floating over the art */
+  .card .textbar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    text-align: center; padding: 1px 3px 2px;
+  }
   .card .ctype {
-    position: absolute; left: 2px; right: 2px;
-    text-align: center; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.65;
+    text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.65;
+  }
+  .card .ctext { line-height: 1.3; opacity: 0.92; }
+  /* faint ministry washes on banner + scrim (items/equips read green) */
+  .card .cname, .card .textbar { background: rgba(240, 230, 210, 0.92); color: #1c1915; }
+  .card.min-red .cname, .card.min-red .textbar { background: rgba(246, 211, 214, 0.92); }
+  .card.min-yellow .cname, .card.min-yellow .textbar { background: rgba(247, 236, 200, 0.92); }
+  .card.min-blue .cname, .card.min-blue .textbar { background: rgba(207, 221, 247, 0.92); }
+  .card.type-item .cname, .card.type-item .textbar,
+  .card.type-equip .cname, .card.type-equip .textbar { background: rgba(217, 232, 210, 0.92); }
+  /* papery grain over the whole face (SVG turbulence, no image file) */
+  .card .grain {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+  /* cost = tongbao coins stacked down the left edge, on top of the frame */
+  .card .cost-stack {
+    position: absolute; top: -4px; left: 1px; z-index: 4;
+    display: flex; flex-direction: column;
+  }
+  .card .tcoin { display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4)); }
+  .card .tcoin svg { display: block; width: 100%; height: 100%; }
+  /* power = deep red orb floating over the bottom-right corner */
+  .card .power {
+    position: absolute; bottom: -7px; right: -7px; z-index: 4;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e88a7d, #b03024 45%, #5f1212);
+    color: #fdf3ec; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   }
   .hand .card .ctype, .slot .card .ctype, .card.drag-ghost .ctype { display: none; }
-  .slot .card .art { display: flex; top: 14%; height: 58%; left: 6%; right: 6%; }
+  .slot .card .ctext, .slot .card .textbar { display: none; }
   /* long-press zoom modal */
   #zoom-modal {
     position: fixed; inset: 0; z-index: 2600;
@@ -394,64 +407,42 @@
   #zoom-modal.hidden { display: none; }
   #zoom-card .card.zoom {
     width: 280px; height: 392px;
-    background: #f0e6d2; color: #222;
+    padding: 8px; border-radius: 14px;
     cursor: default;
   }
-  #zoom-card .card.zoom .cname { font-size: 19px; top: 8px; }
-  #zoom-card .card.zoom .art { top: 36px; height: 235px; left: 10px; right: 10px; }
+  #zoom-card .card.zoom .cardface { border-radius: 8px; }
+  #zoom-card .card.zoom .cname { font-size: 19px; padding: 6px 8px; }
   #zoom-card .card.zoom .art .art-ph { font-size: 48px; }
-  #zoom-card .card.zoom .cost { top: -10px; left: -10px; width: 44px; height: 44px; font-size: 22px; }
-  #zoom-card .card.zoom .ctype {
-    position: absolute; top: 275px; left: 0; right: 0;
-    text-align: center; font-size: 12px; opacity: 0.65;
-    text-transform: uppercase; letter-spacing: 0.06em;
+  #zoom-card .card.zoom .textbar { padding: 4px 10px 8px; }
+  #zoom-card .card.zoom .ctype { font-size: 12px; letter-spacing: 0.06em; }
+  #zoom-card .card.zoom .ctext {
+    font-size: 13.5px;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
-  #zoom-card .card.zoom .ctext { top: 293px; left: 12px; right: 12px; font-size: 13.5px; -webkit-line-clamp: 3; }
-  #zoom-card .card.zoom .power {
-    left: auto; top: auto; bottom: -10px; right: -10px;
-    width: 44px; height: 44px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 22px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #zoom-card .card.zoom.min-red { background: #f8d7da; border-color: #e94560; }
-  #zoom-card .card.zoom.min-yellow { background: #fff3cd; border-color: #d4a017; }
-  #zoom-card .card.zoom.min-blue { background: #cfe2ff; border-color: #4a7bff; }
-  #zoom-card .card.zoom.type-item { background: #e9e0f5; }
-  #zoom-card .card.zoom.type-equip { background: #d9edec; }
-  #zoom-card .card.zoom.rar-U { border-color: #4a7bff; }
-  #zoom-card .card.zoom.rar-R { border-color: #d4a017; }
+  #zoom-card .card.zoom .tcoin { width: 34px; height: 34px; }
+  #zoom-card .card.zoom .tcoin + .tcoin { margin-top: -10px; }
+  #zoom-card .card.zoom .power { width: 50px; height: 50px; font-size: 22px; bottom: -10px; right: -10px; }
   /* hand cards (large) */
-  .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; }
-  .hand .card, .card.big, .card.drag-ghost, #zoom-card .card.zoom { overflow: visible; }
+  .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; padding: 3px; }
+  .hand .card, .slot .card, .card.big, .card.drag-ghost, #zoom-card .card.zoom { overflow: visible; }
   .hand .card .cname, .deck-grid .card .cname { font-size: 6.5px; }
-  .hand .card .cost, .deck-grid .card .cost {
-    top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px;
+  .hand .card .tcoin, .deck-grid .card .tcoin { width: 13px; height: 13px; }
+  .hand .card .tcoin + .tcoin, .deck-grid .card .tcoin + .tcoin { margin-top: -4px; }
+  .hand .card .power, .deck-grid .card .power { width: 17px; height: 17px; font-size: 10px; }
+  .hand .card .ctext, .deck-grid .card .ctext {
+    font-size: 5.5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .hand .card .power, .deck-grid .card .power {
-    left: auto; top: auto; bottom: -6px; right: -6px;
-    width: 17px; height: 17px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 10px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .hand .card .ctext { top: 59px; font-size: 5.5px; -webkit-line-clamp: 2; }
-  .card.face-up { background: #f0e6d2; color: #222; cursor: grab; }
+  .card.face-up { color: #222; cursor: grab; }
   .card.face-up.cant-afford { opacity: 0.35; cursor: default; }
-  .card.face-up.min-red { background: #f8d7da; border-color: #e94560; }
-  .card.face-up.min-yellow { background: #fff3cd; border-color: #d4a017; }
-  .card.face-up.min-blue { background: #cfe2ff; border-color: #4a7bff; }
   /* column cards */
-  .slot .card { width: 100%; height: 100%; }
+  .slot .card { width: 100%; height: 100%; padding: 3px; }
   .slot .card .cname { font-size: 7px; }
-  .slot .card .cost { top: -6px; left: -6px; width: 17px; height: 17px; font-size: 10px; }
-  .slot .card .power {
-    left: auto; top: auto; bottom: -6px; right: -6px;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #b03a2e; color: #fff; font-size: 11px;
-    display: flex; align-items: center; justify-content: center;
-  }
+  .slot .card .tcoin { width: 13px; height: 13px; }
+  .slot .card .tcoin + .tcoin { margin-top: -4px; }
+  .slot .card .power { width: 20px; height: 20px; font-size: 11px; }
   .slot .card.face-up { cursor: default; }
-  .slot .card.opp { background: #3a3a5e; border-color: #555; cursor: default; }
-  .slot .card.opp .cname { color: #ddd; }
+  .slot .card.opp { cursor: default; }
   /* drag ghost: explicit sizing, since it's detached from .hand */
   .card.drag-ghost {
     position: fixed;
@@ -462,11 +453,10 @@
     margin: 0;
     width: 56px;
     height: 78px;
+    padding: 3px;
     color: #222;
   }
   .card.drag-ghost .cname { font-size: 7px; }
-  .card.drag-ghost .cost { top: 13px; width: 18px; height: 18px; font-size: 11px; }
-  .card.drag-ghost .power { font-size: 20px; }
 
   .hand {
     display: flex;
@@ -476,7 +466,7 @@
     align-content: flex-start;
   }
   #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
-  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border-color: #555; }
+  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border: 2px solid #555; padding: 0; box-shadow: none; }
 
   #turn-counter { font-size: 1.05rem; font-weight: 700; }
   #end-turn {
@@ -712,6 +702,16 @@
       </div>
     </div>
   </div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="tongbao-grad" cx="0.35" cy="0.3" r="0.95">
+        <stop offset="0" stop-color="#f2cd55" />
+        <stop offset="0.7" stop-color="#d4a017" />
+        <stop offset="1" stop-color="#8a6410" />
+      </radialGradient>
+    </defs>
+  </svg>
 
   <div id="zoom-modal" class="hidden">
     <div id="zoom-card"></div>
@@ -957,52 +957,67 @@
       return art;
     }
 
+    var TONGBAO_COIN = '<svg viewBox="0 0 36 36"><path d="M18 1.5A16.5 16.5 0 1 0 18 34.5A16.5 16.5 0 1 0 18 1.5Z M13 13h10v10H13Z" fill="url(#tongbao-grad)" fill-rule="evenodd" stroke="#7a5a10" stroke-width="1.2"/></svg>';
+
+    function coinStackEl(cost) {
+      var st = document.createElement('div');
+      st.className = 'cost-stack';
+      for (var i = 0; i < cost; i++) {
+        var s = document.createElement('span');
+        s.className = 'tcoin';
+        s.innerHTML = TONGBAO_COIN;
+        st.appendChild(s);
+      }
+      return st;
+    }
+
+    /* Full-art card: metal rarity frame, full-bleed art, name banner + text scrim,
+       tongbao coin stack for cost, deep red orb for power. */
     function cardEl(card, cls) {
       var c = document.createElement('div');
       c.className = 'card ' + cls + colorClass(card);
+      if (card.rarity) c.classList.add('rar-' + card.rarity);
+      if (card.type) c.classList.add('type-' + card.type);
       c.dataset.cardId = card.id;
+      var face = document.createElement('div');
+      face.className = 'cardface';
+      face.appendChild(artEl(card.uid));
       var name = document.createElement('div');
       name.className = 'cname';
       name.textContent = card.name;
-      c.appendChild(name);
-      c.appendChild(artEl(card.uid));
+      face.appendChild(name);
+      var bar = document.createElement('div');
+      bar.className = 'textbar';
       var ty = document.createElement('div');
       ty.className = 'ctype';
       ty.textContent = typeLabel(card);
-      c.appendChild(ty);
-      if (card.cost !== null && card.cost !== undefined) {
-        var cost = document.createElement('div');
-        cost.className = 'cost';
-        cost.textContent = card.cost;
-        c.appendChild(cost);
+      bar.appendChild(ty);
+      if (card.text) {
+        var tx = document.createElement('div');
+        tx.className = 'ctext';
+        tx.textContent = card.text;
+        bar.appendChild(tx);
       }
+      face.appendChild(bar);
+      var grain = document.createElement('div');
+      grain.className = 'grain';
+      face.appendChild(grain);
+      c.appendChild(face);
+      if (card.cost !== null && card.cost !== undefined) c.appendChild(coinStackEl(card.cost));
       if (card.type === 'agent') {
         var power = document.createElement('div');
         power.className = 'power';
         power.textContent = card.power;
         c.appendChild(power);
       }
-      if (card.text) {
-        var tx = document.createElement('div');
-        tx.className = 'ctext';
-        tx.textContent = card.text;
-        c.appendChild(tx);
-      }
       return c;
     }
 
     function oppCardEl(card) {
-      var c = document.createElement('div');
-      c.className = 'card opp';
-      var name = document.createElement('div');
-      name.className = 'cname';
-      name.textContent = card.name;
-      c.appendChild(name);
-      c.appendChild(artEl(card.uid));
-      var power = document.createElement('div');
-      power.className = 'power';
-      power.textContent = agentPower(card);
-      c.appendChild(power);
+      var c = cardEl(card, 'opp');
+      var stack = c.querySelector('.cost-stack');
+      if (stack) stack.remove();
+      c.querySelector('.power').textContent = agentPower(card);
       return c;
     }
 
@@ -1641,37 +1656,9 @@
     }
 
     function zoomCardEl(card) {
-      var c = document.createElement('div');
-      c.className = 'card zoom' + colorClass(card);
-      if (card.rarity) c.className += ' rar-' + card.rarity;
-      if (card.type) c.className += ' type-' + card.type;
-      var name = document.createElement('div');
-      name.className = 'cname';
-      name.textContent = card.name;
-      c.appendChild(name);
-      c.appendChild(artEl(card.uid));
-      var ty = document.createElement('div');
-      ty.className = 'ctype';
-      ty.textContent = typeLabel(card);
-      c.appendChild(ty);
-      if (card.cost !== null && card.cost !== undefined) {
-        var cost = document.createElement('div');
-        cost.className = 'cost';
-        cost.textContent = card.cost;
-        c.appendChild(cost);
-      }
-      if (card.type === 'agent') {
-        var power = document.createElement('div');
-        power.className = 'power';
-        power.textContent = agentPower(card);
-        c.appendChild(power);
-      }
-      if (card.text) {
-        var tx = document.createElement('div');
-        tx.className = 'ctext';
-        tx.textContent = card.text;
-        c.appendChild(tx);
-      }
+      var c = cardEl(card, 'zoom');
+      var p = c.querySelector('.power');
+      if (p) p.textContent = agentPower(card);
       return c;
     }
 
