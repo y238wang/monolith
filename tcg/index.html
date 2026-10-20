@@ -226,11 +226,12 @@
   }
   .card-back .emblem { font-size: 26px; color: #d4a017; }
   .new-badge {
-    position: absolute; top: -8px; left: -8px;
+    position: absolute; top: -10px; left: 50%;
+    transform: translateX(-50%);
     background: #4caf50; color: #fff;
     font-size: 0.6rem; font-weight: 800;
     padding: 2px 6px; border-radius: 8px;
-    z-index: 3;
+    z-index: 10;
   }
   #pack-actions { display: flex; gap: 0.8rem; }
   .pack-btn {
@@ -381,7 +382,7 @@
   }
   /* cost = tongbao coins stacked down the left edge, on top of the frame */
   .card .cost-stack {
-    position: absolute; top: -4px; left: 1px; z-index: 4;
+    position: absolute; top: -4px; left: -6px; z-index: 4;
     display: flex; flex-direction: column;
   }
   .card .tcoin { display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4)); }
@@ -419,6 +420,7 @@
     font-size: 13.5px;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
+  #zoom-card .card.zoom .cost-stack { left: -14px; }
   #zoom-card .card.zoom .tcoin { width: 34px; height: 34px; }
   #zoom-card .card.zoom .tcoin + .tcoin { margin-top: -10px; }
   #zoom-card .card.zoom .power { width: 50px; height: 50px; font-size: 22px; bottom: -10px; right: -10px; }
