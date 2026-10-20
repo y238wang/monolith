@@ -12,8 +12,8 @@
   html, body { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    background: #f2ecdd;
+    color: #1c1915;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -48,14 +48,17 @@
   #loading-screen { align-items: center; justify-content: center; gap: 1.1rem; text-align: center; }
   #load-track {
     width: 70%; max-width: 280px; height: 10px; border-radius: 5px;
-    background: #2b2b52; border: 1px solid rgba(212,160,23,0.4); overflow: hidden;
+    background: rgba(28, 25, 21, 0.12); border: 1px solid rgba(28, 25, 21, 0.35); overflow: hidden;
   }
   #load-fill {
     height: 100%; width: 0%; border-radius: 5px;
     background: linear-gradient(90deg, #b8860b, #d4a017); transition: width 0.15s;
   }
   #load-status { font-size: 13px; opacity: 0.7; }
-  #game-title { font-size: 2.4rem; font-weight: 800; color: #ffd75e; }
+  #game-title {
+    font-family: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive, serif;
+    font-size: 3rem; font-weight: 400; color: #1c1915;
+  }
   #game-subtitle { font-size: 0.95rem; opacity: 0.6; margin-top: -0.7rem; }
   .menu-btn {
     font-family: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive, serif;
@@ -68,18 +71,34 @@
     -webkit-tap-highlight-color: transparent;
   }
   .menu-btn:active { transform: scale(0.97); }
+  /* interior screens: rice-paper ink-wash backdrops, one painting per screen */
+  #game-screen, #deck-screen, #collection-screen, #pack-screen {
+    margin: -0.75rem;
+    padding: 0.75rem;
+    background-color: #f2ecdd;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+  }
+  #game-screen { background-image: url('assets/game-bg.webp'); }
+  #deck-screen { background-image: url('assets/deck-bg.webp'); }
+  #collection-screen { background-image: url('assets/collection-bg.webp'); }
+  #pack-screen { background-image: url('assets/pack-bg.webp'); }
   #deck-screen { overflow: hidden; }
   #deck-screen > * { flex: 0 0 auto; }
   #deck-area { flex: 1 1 0; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #pool-area { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #deck-head, #collection-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
-  #deck-head h2, #collection-head h2 { font-size: 1.3rem; flex: 1; }
+  #deck-head h2, #collection-head h2 {
+    font-family: 'Ma Shan Zheng', 'Kaiti SC', 'STKaiti', 'KaiTi', cursive, serif;
+    font-weight: 400; font-size: 1.9rem; flex: 1;
+  }
   #deck-count-label, #collection-total { font-size: 0.85rem; opacity: 0.6; }
   #deck-back, #collection-back {
     font-size: 0.9rem; font-weight: 700;
     padding: 0.5rem 0.9rem;
-    border: 1px solid #555; border-radius: 10px;
-    background: #2a2a40; color: #eee; cursor: pointer;
+    border: 1px solid #1c1915; border-radius: 10px;
+    background: rgba(250, 247, 238, 0.9); color: #1c1915; cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
@@ -88,7 +107,7 @@
   .deck-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .deck-count {
     position: absolute; top: -8px; right: -8px;
-    background: #e94560; color: #fff;
+    background: #a32e22; color: #faf7ee;
     font-size: 0.7rem; font-weight: 800;
     min-width: 22px; height: 22px; border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
@@ -100,8 +119,8 @@
   #menu-btn {
     font-size: 1rem; font-weight: 700;
     padding: 0.8rem 2rem;
-    border: 2px solid #888; border-radius: 999px;
-    background: transparent; color: #eee;
+    border: 2px solid #1c1915; border-radius: 999px;
+    background: transparent; color: #1c1915;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -113,16 +132,16 @@
     font-size: 0.75rem; font-weight: 600;
     padding: 0.35rem 0.7rem;
     border-radius: 999px;
-    border: 1px solid #555;
-    background: #2a2a40; color: #ccc;
+    border: 1px solid rgba(28, 25, 21, 0.5);
+    background: rgba(250, 247, 238, 0.85); color: #1c1915;
     cursor: pointer;
     touch-action: manipulation;
   }
-  .chip.active { background: #ffd75e; border-color: #ffd75e; color: #222; }
+  .chip.active { background: #a32e22; border-color: #a32e22; color: #faf7ee; }
   .cgrid { display: flex; flex-wrap: wrap; gap: 14px 10px; justify-content: center; align-content: flex-start; padding: 0.5rem 0 1.5rem; }
   .ccell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; flex: 0 0 auto; }
   .ccell .sub { font-size: 0.6rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; text-align: center; }
-  .ccell .owned { font-size: 0.68rem; font-weight: 700; color: #9fd6a4; }
+  .ccell .owned { font-size: 0.68rem; font-weight: 700; color: #2e7d32; }
   .ccell.unowned .owned { color: #777; }
   .ccell.unowned .card.big { filter: grayscale(1); opacity: 0.45; }
   .card.big { width: 68px; height: 96px; padding: 3px; }
@@ -148,13 +167,13 @@
   #deck-reset, #deck-clear {
     font-size: 0.8rem; font-weight: 600;
     padding: 0.45rem 0.9rem;
-    border: 1px solid #555; border-radius: 10px;
-    background: #2a2a40; color: #ccc; cursor: pointer;
+    border: 1px solid #1c1915; border-radius: 10px;
+    background: rgba(250, 247, 238, 0.9); color: #1c1915; cursor: pointer;
     touch-action: manipulation;
   }
   .db-hint { opacity: 0.55; font-size: 0.72rem; text-transform: none; letter-spacing: 0; }
   #deck-area, #pool-area {
-    border: 2px dashed #3a3a55;
+    border: 2px dashed rgba(28, 25, 21, 0.4);
     border-radius: 12px;
     padding: 0.6rem 0.4rem;
     min-height: 110px;
@@ -164,9 +183,9 @@
   #deck-area .cgrid, #pool-area .cgrid { padding: 0; }
   #deck-area .db-empty { opacity: 0.5; font-size: 0.85rem; text-align: center; width: 100%; padding: 1rem 0; }
   .slot .card.face-up.drop-ok-card { outline: 2px solid #4caf50; }
-  .slot .card.face-up.drop-full-card { outline: 2px solid #e94560; }
-  .slot .card.opp.targetable { outline: 2px solid #ffd75e; cursor: pointer; }
-  .hand .card.discardable { outline: 2px solid #e94560; cursor: pointer; }
+  .slot .card.face-up.drop-full-card { outline: 2px solid #a32e22; }
+  .slot .card.opp.targetable { outline: 2px solid #b8860b; cursor: pointer; }
+  .hand .card.discardable { outline: 2px solid #a32e22; cursor: pointer; }
   .equip-badge {
     position: absolute; bottom: -6px; left: -6px;
     background: #d4a017; color: #222;
@@ -176,14 +195,14 @@
   }
   #reveal { position: fixed; inset: 0; background: rgba(10, 10, 20, 0.88); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
   #reveal.hidden { display: none; }
-  #reveal-box { background: #23233a; border-radius: 16px; padding: 1.2rem; max-width: 340px; max-height: 80vh; overflow-y: auto; text-align: center; }
+  #reveal-box { background: #f5efe0; border: 2px solid #1c1915; color: #1c1915; border-radius: 16px; padding: 1.2rem; max-width: 340px; max-height: 80vh; overflow-y: auto; text-align: center; }
   #reveal-box h3 { margin-bottom: 0.8rem; font-size: 1.1rem; }
   #reveal-cards { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 1rem; }
   #reveal-close {
     font-size: 1rem; font-weight: 700;
     padding: 0.6rem 2rem;
-    border: none; border-radius: 999px;
-    background: #4caf50; color: #fff; cursor: pointer;
+    border: 2px solid #1c1915; border-radius: 999px;
+    background: #faf7ee; color: #1c1915; cursor: pointer;
     touch-action: manipulation;
   }
   /* ---- pack opening ---- */
@@ -199,7 +218,7 @@
   }
   .pack-half {
     position: absolute; left: 0; right: 0; height: 50%;
-    background: linear-gradient(135deg, #3a2a6e, #1f1a4e);
+    background: linear-gradient(135deg, #b03a2e, #7c1f14);
     border: 2px solid #d4a017;
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.45s ease-in, opacity 0.45s;
@@ -220,7 +239,7 @@
   .flip-back { transform: rotateY(180deg); }
   .card-back {
     width: 68px; height: 96px; border-radius: 8px;
-    background: linear-gradient(135deg, #3a2a6e, #1f1a4e);
+    background: linear-gradient(135deg, #b03a2e, #7c1f14);
     border: 2px solid #d4a017;
     display: flex; align-items: center; justify-content: center;
   }
@@ -238,12 +257,12 @@
     font-size: 1rem; font-weight: 700;
     padding: 0.8rem 1.4rem;
     border: none; border-radius: 14px;
-    background: #4caf50; color: #fff; cursor: pointer;
+    background: #a32e22; color: #faf7ee; cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
   .pack-btn:active { transform: scale(0.97); }
-  #pack-done { background: #3a3a5e; border: 1px solid #555; }
+  #pack-done { background: rgba(250, 247, 238, 0.9); border: 1px solid #1c1915; color: #1c1915; }
 
   /* ---- middle: board + side panel ---- */
   #middle { display: flex; gap: 8px; flex: 1; min-height: 0; }
@@ -272,7 +291,7 @@
   .column.min-yellow { background: rgba(212, 160, 23, 0.10); }
   .column.min-blue { background: rgba(74, 123, 255, 0.10); }
   .column.drop-ok { outline: 2px solid #4caf50; }
-  .column.drop-full { outline: 2px solid #e94560; }
+  .column.drop-full { outline: 2px solid #a32e22; }
   .col-slots {
     display: flex;
     flex-direction: column;
@@ -286,7 +305,7 @@
     max-width: 120px;
     margin: 0 auto;
     border-radius: 7px;
-    border: 2px dashed #444;
+    border: 2px dashed rgba(28, 25, 21, 0.45);
     flex: 1 1 0;
     min-height: 0;
     position: relative;
@@ -312,15 +331,15 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 4px 2px;
-    border-top: 2px solid #555;
-    border-bottom: 2px solid #555;
+    border-top: 2px solid rgba(28, 25, 21, 0.4);
+    border-bottom: 2px solid rgba(28, 25, 21, 0.4);
     opacity: 0.9;
   }
-  .col-head.lead-you { border-top-color: #4caf50; border-bottom-color: #4caf50; }
-  .col-head.lead-opp { border-top-color: #e94560; border-bottom-color: #e94560; }
+  .col-head.lead-you { border-top-color: #2e7d32; border-bottom-color: #2e7d32; }
+  .col-head.lead-opp { border-top-color: #a32e22; border-bottom-color: #a32e22; }
   .col-head .tally { display: block; font-size: 0.8rem; margin-top: 2px; text-transform: none; letter-spacing: 0; }
-  .col-head .tally b.you { color: #8fd694; }
-  .col-head .tally b.opp { color: #f0a0a0; }
+  .col-head .tally b.you { color: #2e7d32; }
+  .col-head .tally b.opp { color: #b03a2e; }
 
   /* ---- cards (full-art: metal rarity frame, coin-stack cost, red-orb power) ---- */
   .card {
@@ -468,7 +487,7 @@
     align-content: flex-start;
   }
   #opp-hand-strip { display: flex; gap: 4px; margin-bottom: 0.5rem; }
-  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: #3a3a5e; border: 2px solid #555; padding: 0; box-shadow: none; }
+  #opp-hand-strip .card { width: 30px; height: 42px; border-radius: 5px; background: linear-gradient(135deg, #b03a2e, #7c1f14); border: 2px solid #d4a017; padding: 0; box-shadow: none; }
 
   #turn-counter { font-size: 1.05rem; font-weight: 700; }
   #end-turn {
@@ -478,8 +497,8 @@
     padding: 0.8rem 0.3rem;
     border: none;
     border-radius: 14px;
-    background: #e94560;
-    color: #fff;
+    background: #a32e22;
+    color: #faf7ee;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -501,19 +520,24 @@
   #result-title.win { color: #8fd694; }
   #result-title.lose { color: #f0a0a0; }
   #result-title.draw { color: #ccc; }
-  #result-sub { font-size: 1rem; width: 100%; max-width: 300px; }
+  #result-sub {
+    font-size: 1rem; width: 100%; max-width: 300px;
+    background: rgba(250, 247, 238, 0.96);
+    border: 2px solid #1c1915; border-radius: 12px;
+    padding: 0.8rem 1rem; color: #1c1915;
+  }
   #result-sub .mrow {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.4rem 0.2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(28, 25, 21, 0.15);
   }
-  #result-sub .mrow b.you { color: #8fd694; }
-  #result-sub .mrow b.opp { color: #f0a0a0; }
+  #result-sub .mrow b.you { color: #2e7d32; }
+  #result-sub .mrow b.opp { color: #b03a2e; }
   #result-sub .mrow .mark { width: 1.5em; text-align: right; font-weight: 800; }
-  #result-sub .mrow .mark.you { color: #8fd694; }
-  #result-sub .mrow .mark.opp { color: #f0a0a0; }
+  #result-sub .mrow .mark.you { color: #2e7d32; }
+  #result-sub .mrow .mark.opp { color: #b03a2e; }
   #result-sub .mrow .mark.tie { color: #888; }
   #result-sub .tnote { font-size: 0.8rem; opacity: 0.6; margin-top: 0.6rem; }
   #new-game {
@@ -522,8 +546,8 @@
     padding: 0.9rem 2.5rem;
     border: none;
     border-radius: 999px;
-    background: #4caf50;
-    color: #fff;
+    background: #a32e22;
+    color: #faf7ee;
     cursor: pointer;
     margin-top: 0.5rem;
     touch-action: manipulation;
@@ -533,7 +557,7 @@
   #discard-slot {
     width: 64px;
     aspect-ratio: 5 / 7;
-    border: 2px dashed #666;
+    border: 2px dashed rgba(28, 25, 21, 0.5);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -547,7 +571,7 @@
     margin-top: 0.5rem;
     touch-action: none;
   }
-  #discard-slot b { color: #ffd75e; font-size: 0.8rem; }
+  #discard-slot b { color: #b8860b; font-size: 0.8rem; }
   .discard-reward { display: flex; align-items: center; gap: 4px; }
   #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
   #discard-slot.used { opacity: 0.3; }
@@ -559,7 +583,7 @@
   }
   .income-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
   .side-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
-  .income-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; color: #ffd75e; white-space: nowrap; }
+  .income-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; color: #b8860b; white-space: nowrap; }
   .income-tag b { font-size: 0.9rem; }
   .income-coins {
     display: flex; flex-direction: column; flex-wrap: wrap; gap: 3px;
@@ -1364,7 +1388,7 @@
     }
 
     function preloadArt(done) {
-      var total = SET1.length + 1, loaded = 0;
+      var total = SET1.length + 5, loaded = 0;
       var start = Date.now();
       var fill = document.getElementById('load-fill');
       var status = document.getElementById('load-status');
@@ -1386,6 +1410,10 @@
       }
       SET1.forEach(function (card) { loadSrc(artUrl(card.uid)); });
       loadSrc('assets/menu-bg.webp');
+      loadSrc('assets/game-bg.webp');
+      loadSrc('assets/deck-bg.webp');
+      loadSrc('assets/collection-bg.webp');
+      loadSrc('assets/pack-bg.webp');
     }
 
     var FILTERS = [
