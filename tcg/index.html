@@ -1063,6 +1063,7 @@
           var s = MAX_PER_MINISTRY - 1 - v; /* first-filled slot renders nearest the middle */
           var oslot = document.createElement('div');
           oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
+          oslot.dataset.slotIndex = s; /* opponent slots render nearest-the-middle first (DOM order is reversed) */
           if (s === 1 && !oppBoard[m][s]) oslot.appendChild(slotHint(m));
           if (oppBoard[m][s]) {
             var oc = oppCardEl(oppBoard[m][s]);
@@ -1093,6 +1094,7 @@
         for (var q = 0; q < MAX_PER_MINISTRY; q++) {
           var pslot = document.createElement('div');
           pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
+          pslot.dataset.slotIndex = q;
           if (q === 1 && !playerBoard[m][q]) pslot.appendChild(slotHint(m));
           if (playerBoard[m][q]) {
             var pc = cardEl(playerBoard[m][q], 'face-up');
@@ -1702,7 +1704,7 @@
       var slot = el.closest('.slot');
       if (!slot) return null;
       var m = parseInt(col.dataset.ministry, 10);
-      var idx = Array.prototype.indexOf.call(slot.parentNode.children, slot);
+      var idx = parseInt(slot.dataset.slotIndex, 10);
       var board = el.classList.contains('opp') ? oppBoard : playerBoard;
       return board[m][idx] || null;
     }
@@ -1778,7 +1780,7 @@
           var tcol = ot.closest('.column');
           var tm = parseInt(tcol.dataset.ministry, 10);
           var tslot = ot.closest('.slot');
-          var tidx = Array.prototype.indexOf.call(tslot.parentNode.children, tslot);
+          var tidx = parseInt(tslot.dataset.slotIndex, 10);
           if (applyTarget(pendingTarget.kind, tm, tidx)) pendingTarget = null;
         } else {
           pendingTarget = null;
@@ -1837,7 +1839,7 @@
         if (ael) {
           var am = parseInt(ael.closest('.column').dataset.ministry, 10);
           var aslot = ael.closest('.slot');
-          var aidx = Array.prototype.indexOf.call(aslot.parentNode.children, aslot);
+          var aidx = parseInt(aslot.dataset.slotIndex, 10);
           var aok = drag.card.cost <= playerCoins && !!playerBoard[am][aidx] &&
             (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === am);
           ael.classList.add(aok ? 'drop-ok-card' : 'drop-full-card');
