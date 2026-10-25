@@ -805,6 +805,7 @@
 
   <div id="toast" class="hidden"></div>
 
+<script src="../tcg-simulator/engine.js"></script>
 <script>
   (function () {
     var MAX_TURNS = 6;
@@ -822,70 +823,10 @@
       'Intrigue bonus: draw +1 card each turn'
     ];
 
-    var SET1 = [
-      // Military agents (11)
-      { uid: 'militia-recruit', name: 'Recruit', type: 'agent', cost: 2, power: 3, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'militia-captain', name: 'Captain', type: 'agent', cost: 4, power: 6, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'militia-levy', name: 'Levy', type: 'agent', cost: 1, power: 2, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'sentry', name: 'Sentry', type: 'agent', cost: 1, power: 1, ministry: 0, rarity: 'C', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
-      { uid: 'man-at-arms', name: 'Imperial Guard', type: 'agent', cost: 3, power: 5, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'quartermaster', name: 'Provisioner', type: 'agent', cost: 5, power: 6, ministry: 0, rarity: 'C', text: 'Your other Military agents get +2 power.' },
-      { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 9, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 4, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
-      { uid: 'veteran-sergeant', name: 'Drillmaster', type: 'agent', cost: 4, power: 4, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Military.' },
-      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 4, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
-      { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 7, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
-      // Commerce agents (11)
-      { uid: 'peddler', name: 'Peddler', type: 'agent', cost: 2, power: 3, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'merchant-prince', name: 'Merchant Prince', type: 'agent', cost: 4, power: 6, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'errand-boy', name: 'Errand Boy', type: 'agent', cost: 1, power: 2, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'broker', name: 'Broker', type: 'agent', cost: 1, power: 1, ministry: 1, rarity: 'C', text: 'On play: gain 1 coin.' },
-      { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 5, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 7, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
-      { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 9, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 5, ministry: 1, rarity: 'U', text: 'On play: +1 income.' },
-      { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 2, ministry: 1, rarity: 'U', text: 'On play: draw a card.' },
-      { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 4, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
-      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 7, ministry: 1, rarity: 'R', text: 'On play: +3 income.' },
-      // Intrigue agents (11)
-      { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 3, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'spymaster', name: 'Spymaster', type: 'agent', cost: 4, power: 6, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'pickpocket', name: 'Pickpocket', type: 'agent', cost: 1, power: 2, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'lookout', name: 'Lookout', type: 'agent', cost: 1, power: 1, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
-      { uid: 'courier', name: 'Courier', type: 'agent', cost: 3, power: 5, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'spy', name: 'Spy', type: 'agent', cost: 5, power: 7, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
-      { uid: 'mastermind', name: 'Mastermind', type: 'agent', cost: 6, power: 8, ministry: 2, rarity: 'C', text: 'On play: draw 2 cards.' },
-      { uid: 'double-agent', name: 'Double Agent', type: 'agent', cost: 3, power: 4, ministry: 2, rarity: 'U', text: "On play: at the start of your next turn, after the draw phase, your opponent discards a random card." },
-      { uid: 'blackmailer', name: 'Blackmailer', type: 'agent', cost: 4, power: 5, ministry: 2, rarity: 'U', text: 'On play: at the start of your next turn, after the draw phase, your opponent discards a random card.' },
-      { uid: 'poisoner', name: 'Poisoner', type: 'agent', cost: 3, power: 4, ministry: 2, rarity: 'U', text: "On play: give an opponent's agent -3 power." },
-      { uid: 'grand-spymaster', name: 'Grand Spymaster', type: 'agent', cost: 6, power: 7, ministry: 2, rarity: 'R', text: "On play: gain control of an opponent's agent." },
-      // Neutral agents (8)
-      { uid: 'villager', name: 'Villager', type: 'agent', cost: 1, power: 1, ministry: null, rarity: 'C', text: '' },
-      { uid: 'artisan', name: 'Artisan', type: 'agent', cost: 2, power: 2, ministry: null, rarity: 'C', text: '' },
-      { uid: 'scholar', name: 'Scholar', type: 'agent', cost: 3, power: 3, ministry: null, rarity: 'C', text: '' },
-      { uid: 'elder', name: 'Elder', type: 'agent', cost: 4, power: 4, ministry: null, rarity: 'C', text: '' },
-      { uid: 'master', name: 'Master', type: 'agent', cost: 5, power: 5, ministry: null, rarity: 'C', text: '' },
-      { uid: 'sage', name: 'Sage', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'C', text: '' },
-      { uid: 'diplomat', name: 'Diplomat', type: 'agent', cost: 3, power: 2, ministry: null, rarity: 'U', text: 'On play: gain 1 coin and draw a card.' },
-      { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
-      // Items (5)
-      { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 1 extra coin for each agent in your Commerce.' },
-      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 1 coin for each agent in your Military at the start of your next turn.' },
-      { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
-      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income if you have an agent in Commerce.' },
-      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: return an agent to your hand, gain its cost in coins.' },
-      // Equips (8)
-      { uid: 'iron-arms', name: 'Iron Bracers', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-      { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-      { uid: 'concealed-blade', name: 'Concealed Blade', type: 'equip', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-      { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +3 power.', attachPower: 3 },
-      { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +4 power. The tax amount is +1.', attachPower: 4 },
-      { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +1 power.', attachPower: 1, coinOnAttach: 3 },
-      { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +4 power.', attachPower: 4, drawOnAttach: 1 },
-      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is equipped, players cannot play agents on the equipped agent\'s ministry (starting next turn).', attachPower: 3 }
-    ];
-    var cardDef = {};
-    SET1.forEach(function (t) { cardDef[t.uid] = t; });
+    // Card data lives in the engine (tcg-simulator/engine.js); the page
+    // aliases it so there is exactly one copy of Set 1.
+    var SET1 = TCGEngine.SET1;
+    var cardDef = TCGEngine.cardDef;
 
     var STARTER_DECK = ['villager', 'villager', 'artisan', 'artisan', 'scholar', 'scholar', 'elder', 'master', 'sage',
       'militia-recruit', 'militia-captain', 'peddler', 'merchant-prince', 'informant', 'spymaster'];
@@ -893,11 +834,10 @@
     var MAX_COPIES = 3;
     var DECK_SIZE = 15;
 
-    var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
-    var playerBase, oppBase;
-    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw, pendingOppPostDraw, pendingTaxOpp;
-    var playerDiscards = [], oppDiscards = [];
-    var revealing = false;
+    // The match lives in the engine (game); the page keeps only UI state.
+    var game = null; // TCGEngine game object, created by newGame
+    var pendingTarget = null; // targeting prompt: { kind, handIndex, ministry? }
+    var revealing = false; // true while the AI's plays are being revealed
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
 
@@ -937,112 +877,11 @@
         saveProgress();
       }
     }
-    var playerDeck, playerHand, oppDeck, oppHand;
-    var playerBoard, oppBoard; // [ministry] -> array of cards (max 3)
-    var nextId = 1;
 
-    function makeCard(t) {
-      var c = {
-        id: nextId++,
-        uid: t.uid, name: t.name, type: t.type,
-        cost: t.cost, power: t.power, ministry: t.ministry,
-        rarity: t.rarity, text: t.text
-      };
-      if (t.type === 'agent') c.equips = [];
-      if (t.type === 'equip') {
-        c.attachPower = t.attachPower || 0;
-        c.coinOnAttach = t.coinOnAttach || 0;
-        c.drawOnAttach = t.drawOnAttach || 0;
-        c.countsAsTwo = !!t.countsAsTwo;
-      }
-      return c;
-    }
-
-    function buildDeck(uids) {
-      var d = uids.map(function (uid) { return makeCard(cardDef[uid]); });
-      for (var j = d.length - 1; j > 0; j--) {
-        var k = Math.floor(Math.random() * (j + 1));
-        var tmp = d[j]; d[j] = d[k]; d[k] = tmp;
-      }
-      return d;
-    }
-
-    function draw(deck, hand) {
-      if (deck.length > 0) hand.push(deck.pop());
-    }
-
-    function agentPower(c) {
-      var p = c.power || 0;
-      (c.equips || []).forEach(function (e) { p += e.attachPower || 0; });
-      if (c.powerDelta) p += c.powerDelta;
-      return p;
-    }
-
-    function ministryPower(board, m) {
-      var t = 0;
-      var agents = board[m];
-      var prov = 0;
-      if (m === 0) agents.forEach(function (x) { if (x.uid === 'quartermaster') prov += 1; });
-      agents.forEach(function (c) {
-        var p = agentPower(c);
-        if (c.uid === 'veteran-sergeant') p += 2 * (agents.length - 1);
-        if (m === 0) p += 2 * (prov - (c.uid === 'quartermaster' ? 1 : 0));
-        t += p;
-      });
-      return t;
-    }
-
-    function bonusCount(board, m) {
-      var n = 0;
-      board[m].forEach(function (c) {
-        n += 1;
-        (c.equips || []).forEach(function (e) { if (e.countsAsTwo) n += 1; });
-      });
-      return n;
-    }
-
-    function hasBonus(board, m) { return bonusCount(board, m) >= 2; }
-
-    function taxModifier(board) {
-      var n = 0;
-      board[0].forEach(function (c) {
-        if (c.uid === 'tax-collector') n += 1;
-        if (c.uid === 'grand-marshal') n += 2;
-        (c.equips || []).forEach(function (e) { if (e.uid === 'tiger-armor') n += 1; });
-      });
-      return n;
-    }
-
-    function syncIncome() {
-      playerIncome = playerBase + (hasBonus(playerBoard, 1) ? 1 : 0);
-      oppIncome = oppBase + (hasBonus(oppBoard, 1) ? 1 : 0);
-    }
-
-    function ministryLocked(m) {
-      // the lock only bites from the turn AFTER the Regalia was equipped:
-      // turns are simultaneous, so the opponent still gets to play into the
-      // ministry during the turn the Regalia hits the board
-      var boards = [playerBoard, oppBoard];
-      for (var b = 0; b < boards.length; b++) {
-        for (var i = 0; i < boards[b][m].length; i++) {
-          var eqs = boards[b][m][i].equips || [];
-          for (var j = 0; j < eqs.length; j++) {
-            if (eqs[j].uid === 'dragon-regalia' && (eqs[j]._lockedFrom === undefined || eqs[j]._lockedFrom < turn)) return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    function sellValue() {
-      var n = 1;
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        for (var i = 0; i < playerBoard[m].length; i++) {
-          if (playerBoard[m][i].uid === 'auctioneer') n += 1;
-        }
-      }
-      return n;
-    }
+    // Match rules live in the engine; the page aliases the display helpers
+    // it still needs directly (board tallies, card orbs, zoom).
+    var agentPower = TCGEngine.agentPower;
+    var ministryPower = TCGEngine.ministryPower;
 
     function colorClass(card) {
       if (card.ministry === null || card.ministry === undefined) return '';
@@ -1135,12 +974,12 @@
       return c;
     }
 
-    function renderBoard() {
+    function renderBoard(V) {
       var board = document.getElementById('board');
       board.innerHTML = '';
       for (var m = 0; m < MINISTRIES.length; m++) {
-        var yp = ministryPower(playerBoard, m);
-        var op = ministryPower(oppBoard, m);
+        var yp = ministryPower(V.me.board, m);
+        var op = ministryPower(V.opp.board, m);
         var col = document.createElement('div');
         col.className = 'column min-' + MINISTRIES[m].color;
         col.dataset.ministry = m;
@@ -1150,12 +989,12 @@
         for (var v = 0; v < MAX_PER_MINISTRY; v++) {
           var s = MAX_PER_MINISTRY - 1 - v; /* first-filled slot renders nearest the middle */
           var oslot = document.createElement('div');
-          oslot.className = 'slot' + (oppBoard[m][s] ? ' filled' : '');
+          oslot.className = 'slot' + (V.opp.board[m][s] ? ' filled' : '');
           oslot.dataset.slotIndex = s; /* opponent slots render nearest-the-middle first (DOM order is reversed) */
-          if (s === 1 && !oppBoard[m][s]) oslot.appendChild(slotHint(m));
-          if (oppBoard[m][s]) {
-            var oc = oppCardEl(oppBoard[m][s]);
-            if (pendingTarget && (pendingTarget.kind === 'weaken' || playerBoard[m].length < MAX_PER_MINISTRY)) {
+          if (s === 1 && !V.opp.board[m][s]) oslot.appendChild(slotHint(m));
+          if (V.opp.board[m][s]) {
+            var oc = oppCardEl(V.opp.board[m][s]);
+            if (pendingTarget && (pendingTarget.kind === 'weaken' || V.me.board[m].length < MAX_PER_MINISTRY)) {
               oc.classList.add('targetable');
             }
             oslot.appendChild(oc);
@@ -1181,15 +1020,15 @@
         playerSlots.className = 'col-slots';
         for (var q = 0; q < MAX_PER_MINISTRY; q++) {
           var pslot = document.createElement('div');
-          pslot.className = 'slot' + (playerBoard[m][q] ? ' filled' : '');
+          pslot.className = 'slot' + (V.me.board[m][q] ? ' filled' : '');
           pslot.dataset.slotIndex = q;
-          if (q === 1 && !playerBoard[m][q]) pslot.appendChild(slotHint(m));
-          if (playerBoard[m][q]) {
-            var pc = cardEl(playerBoard[m][q], 'face-up');
+          if (q === 1 && !V.me.board[m][q]) pslot.appendChild(slotHint(m));
+          if (V.me.board[m][q]) {
+            var pc = cardEl(V.me.board[m][q], 'face-up');
             if (pendingTarget && pendingTarget.kind === 'return') pc.classList.add('targetable');
-            pc.querySelector('.power').textContent = agentPower(playerBoard[m][q]);
+            pc.querySelector('.power').textContent = agentPower(V.me.board[m][q]);
             pslot.appendChild(pc);
-            var eqs = playerBoard[m][q].equips || [];
+            var eqs = V.me.board[m][q].equips || [];
             if (eqs.length > 0) {
               var ebonus = 0;
               eqs.forEach(function (e) { ebonus += e.attachPower || 0; });
@@ -1216,42 +1055,44 @@
       }
     }
 
-    function renderHand() {
+    function renderHand(V) {
       var el = document.getElementById('player-hand');
       el.innerHTML = '';
-      playerHand.forEach(function (card, i) {
-        var c = cardEl(card, 'face-up' + (card.cost > playerCoins ? ' cant-afford' : '') + (pendingDiscard ? ' discardable' : ''));
+      V.me.hand.forEach(function (card, i) {
+        var c = cardEl(card, 'face-up' + (card.cost > V.me.coins ? ' cant-afford' : ''));
         c.dataset.handIndex = i;
         el.appendChild(c);
       });
       var strip = document.getElementById('opp-hand-strip');
       strip.innerHTML = '';
-      oppHand.forEach(function () {
+      for (var j = 0; j < V.opp.handCount; j++) {
         var c = document.createElement('div');
         c.className = 'card';
         strip.appendChild(c);
-      });
+      }
     }
 
     function render() {
+      if (!game) return;
+      var V = game.view(0);
       document.getElementById('turn-counter').textContent =
-        gameOver ? 'Game over' : 'Turn ' + turn + ' of ' + MAX_TURNS;
-      renderIncomeCoins(document.getElementById('opp-income-coins'), oppCoins);
-      renderIncomeCoins(document.getElementById('income-coins'), playerCoins);
-      document.getElementById('opp-income-num').textContent = gameOver ? '' : oppIncome;
-      document.getElementById('income-num').textContent = gameOver ? '' : playerIncome;
+        V.gameOver ? 'Game over' : 'Turn ' + V.turn + ' of ' + MAX_TURNS;
+      renderIncomeCoins(document.getElementById('opp-income-coins'), V.opp.coins);
+      renderIncomeCoins(document.getElementById('income-coins'), V.me.coins);
+      document.getElementById('opp-income-num').textContent = V.gameOver ? '' : V.opp.income;
+      document.getElementById('income-num').textContent = V.gameOver ? '' : V.me.income;
       document.getElementById('end-turn').textContent =
-        turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'Submit Turn';
-      renderBoard();
-      renderHand();
-      document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
-      document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
-      document.getElementById('discard-slot').classList.toggle('used', discardUsed);
-      renderDiscardSlots();
-      document.getElementById('sell-num').textContent = '+' + sellValue();
+        V.turn === MAX_TURNS && !V.gameOver ? 'Finish Game' : 'Submit Turn';
+      renderBoard(V);
+      renderHand(V);
+      document.getElementById('player-deck-count').textContent = 'deck: ' + V.me.deckCount;
+      document.getElementById('opp-deck-count').textContent = 'deck: ' + V.opp.deckCount;
+      document.getElementById('discard-slot').classList.toggle('used', V.me.discardUsed);
+      renderDiscardSlots(V);
+      document.getElementById('sell-num').textContent = '+' + V.me.sellValue;
     }
 
-    function renderOneSlot(id, pile, withCoin) {
+    function renderOneSlot(id, pile, withCoin, sellVal) {
       var slot = document.getElementById(id);
       var top = pile.length > 0 ? pile[pile.length - 1] : null;
       slot.classList.toggle('has-card', !!top);
@@ -1274,7 +1115,7 @@
         coin.className = 'coin';
         var b = document.createElement('b');
         b.id = 'sell-num';
-        b.textContent = '+' + sellValue();
+        b.textContent = '+' + sellVal;
         rw.appendChild(coin); rw.appendChild(b);
         ov.appendChild(rw);
       }
@@ -1283,13 +1124,15 @@
       slot.appendChild(ov);
     }
 
-    function renderDiscardSlots() {
-      renderOneSlot('discard-slot', playerDiscards, true);
-      renderOneSlot('opp-discard-slot', oppDiscards, false);
+    function renderDiscardSlots(V) {
+      renderOneSlot('discard-slot', V.me.discards, true, V.me.sellValue);
+      renderOneSlot('opp-discard-slot', V.opp.discards, false, 0);
     }
 
     function openDiscardModal(side) {
-      var pile = side === 'opp' ? oppDiscards : playerDiscards;
+      if (!game) return;
+      var V = game.view(0);
+      var pile = side === 'opp' ? V.opp.discards : V.me.discards;
       document.getElementById('discard-modal-title').textContent =
         side === 'opp' ? "Opponent's discards" : 'Your discards';
       var grid = document.getElementById('discard-modal-grid');
@@ -1313,10 +1156,12 @@
       var timer = null, startX = 0, startY = 0, longFired = false, tracking = false;
       slot.addEventListener('pointerdown', function (e) {
         if (zoomOpen) return; // let the existing handler close the zoom
+        if (!game) return;
         e.stopPropagation();
         tracking = true; longFired = false;
         startX = e.clientX; startY = e.clientY;
-        var pile = side === 'opp' ? oppDiscards : playerDiscards;
+        var V = game.view(0);
+        var pile = side === 'opp' ? V.opp.discards : V.me.discards;
         if (pile.length === 0) return;
         var top = pile[pile.length - 1];
         timer = setTimeout(function () { longFired = true; showZoom(top); }, 500);
@@ -1338,161 +1183,106 @@
       slot.addEventListener('pointercancel', cancel);
     }
 
-    var ITEM_FX = {
-      'coin-pouch': function () {
-        var n = playerBoard[1].length;
-        playerCoins += n;
-        toast(n > 0 ? 'Coin Pouch: +' + n + ' coins' : 'Coin Pouch: no Commerce agents');
-      },
-      'smoke-bomb': function () { pendingSmoke = 1; toast('Smoke Bomb: opponent loses coins next turn'); },
-      'sealed-letter': function () { draw(playerDeck, playerHand); toast('Sealed Letter: drew a card'); },
-      'abacus': function () {
-        if (playerBoard[1].length > 0) { playerBase += 1; syncIncome(); toast('Abacus: +1 income'); }
-        else toast('Abacus: needs a Commerce agent');
-      },
-      'dragon-pearl': function () {
-        if (!playerHasAgents()) { toast('Dragon Pearl: no agents to return'); return; }
-        pendingTarget = { kind: 'return' };
-        toast('Dragon Pearl: tap one of your agents to return it');
-      }
-    };
-
-    function oppHasAgents() {
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        if (oppBoard[m].length > 0) return true;
-      }
-      return false;
-    }
-
-    function playerHasAgents() {
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        if (playerBoard[m].length > 0) return true;
-      }
-      return false;
-    }
-
-    function playerHasSpace() {
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        if (playerBoard[m].length < MAX_PER_MINISTRY) return true;
-      }
-      return false;
-    }
-
-    function onPlay(card) {
-      switch (card.uid) {
-        case 'broker': playerCoins += 1; toast('Broker: +1 coin'); break;
-        case 'moneylender': playerCoins += 3; toast('Moneylender: +3 coins'); break;
-        case 'lookout':
-        case 'spy': draw(playerDeck, playerHand); toast('Drew a card'); break;
-        case 'mastermind': draw(playerDeck, playerHand); draw(playerDeck, playerHand); toast('Drew 2 cards'); break;
-        case 'diplomat': playerCoins += 1; draw(playerDeck, playerHand); toast('Diplomat: +1 coin, drew a card'); break;
-        case 'treasurer': playerBase += 1; syncIncome(); toast('Treasurer: +1 income'); break;
-        case 'grand-treasurer': playerBase += 3; syncIncome(); toast('Grand Treasurer: +3 income'); break;
-        case 'smuggler': draw(playerDeck, playerHand); toast('Smuggler: drew a card'); break;
-        case 'raider': pendingTax += 1; toast('Raider: opponent loses 1 coin next turn'); break;
-        case 'sentry': pendingTax += 1; toast('Sentry: opponent loses 1 coin next turn'); break;
-        case 'double-agent': pendingPostDraw += 1; toast('Double Agent: opponent discards next turn'); break;
-        case 'blackmailer': pendingPostDraw += 1; toast('Blackmailer: opponent discards next turn'); break;
-        case 'poisoner':
-          if (oppHasAgents()) {
-            pendingTarget = { kind: 'weaken' };
-            toast("Poisoner: tap an opponent's agent");
-          }
-          break;
-        case 'grand-spymaster':
-          if (oppHasAgents() && playerHasSpace()) {
-            pendingTarget = { kind: 'steal' };
-            toast("Tap an opponent's agent to steal it");
-          }
-          break;
-      }
-    }
-
-    function applyTarget(kind, m, idx) {
-      var target = oppBoard[m][idx];
-      if (!target) return false;
-      if (kind === 'weaken') {
-        target.powerDelta = (target.powerDelta || 0) - 3;
-        toast('Poisoned: -3 power');
-      } else if (kind === 'steal') {
-        if (playerBoard[m].length >= MAX_PER_MINISTRY) {
-          toast('Your ' + MINISTRIES[m].name + ' is full');
-          return false;
+    // Translate engine events into the same toasts the old inline code
+    // produced. Play-effect events toast only for the player (the AI was
+    // always silent); round-start events toast for both sides, as before.
+    function toastEvents(evts) {
+      (evts || []).forEach(function (e) {
+        switch (e.type) {
+          case 'coin':
+            if (e.player !== 0) break;
+            if (e.source === 'broker') toast('Broker: +1 coin');
+            else if (e.source === 'moneylender') toast('Moneylender: +3 coins');
+            else if (e.source === 'diplomat') toast('Diplomat: +1 coin, drew a card');
+            else if (e.source === 'war-chest') toast('+' + e.amount + ' coins');
+            else if (e.source === 'coin-pouch') toast(e.amount > 0 ? 'Coin Pouch: +' + e.amount + ' coins' : 'Coin Pouch: no Commerce agents');
+            break;
+          case 'draw':
+            if (e.player !== 0) break;
+            if (e.source === 'diplomat') break; // covered by the Diplomat coin toast
+            if (e.source === 'round') break; // round draws are silent
+            if (e.source === 'mastermind') toast('Drew 2 cards');
+            else if (e.source === 'sealed-letter') toast('Sealed Letter: drew a card');
+            else if (e.source === 'smuggler') toast('Smuggler: drew a card');
+            else toast('Drew a card'); // lookout, spy, shadow-cloak
+            break;
+          case 'income':
+            if (e.player !== 0) break;
+            if (e.source === 'treasurer') toast('Treasurer: +1 income');
+            else if (e.source === 'grand-treasurer') toast('Grand Treasurer: +3 income');
+            else if (e.source === 'abacus') toast('Abacus: +1 income');
+            break;
+          case 'noEffect':
+            if (e.player !== 0) break;
+            if (e.source === 'abacus') toast('Abacus: needs a Commerce agent');
+            else if (e.source === 'dragon-pearl') toast('Dragon Pearl: no agents to return');
+            break;
+          case 'delayedTax':
+            if (e.player !== 0) break;
+            toast(e.source === 'raider' ? 'Raider: opponent loses 1 coin next turn' : 'Sentry: opponent loses 1 coin next turn');
+            break;
+          case 'delayedDiscard':
+            if (e.player !== 0) break;
+            toast(e.source === 'double-agent' ? 'Double Agent: opponent discards next turn' : 'Blackmailer: opponent discards next turn');
+            break;
+          case 'delayedSmoke':
+            if (e.player !== 0) break;
+            toast('Smoke Bomb: opponent loses coins next turn');
+            break;
+          case 'weaken':
+            if (e.player !== 0) break;
+            toast('Poisoned: -3 power');
+            break;
+          case 'steal':
+            if (e.player !== 0) break;
+            toast('Agent stolen!');
+            break;
+          case 'bonus':
+            if (e.player !== 0) break;
+            toast(BONUS_MSG[e.ministry]);
+            break;
+          case 'bonusLost':
+            if (e.ministry !== 1) break;
+            toast(e.victim === 1 ? 'Opponent Commerce bonus lost' : 'Commerce bonus lost');
+            break;
+          case 'return':
+            if (e.player !== 0) break;
+            toast('Returned ' + e.cardName + ' to hand: +' + e.coins + ' coins');
+            break;
+          case 'taxHit':
+            toast(e.victim === 1
+              ? 'Delayed tax: opponent loses ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
+              : 'Delayed tax: you lose ' + e.amount + ' coin' + (e.amount > 1 ? 's' : ''));
+            break;
+          case 'smokeHit':
+            toast(e.victim === 1
+              ? 'Smoke Bomb: opponent loses ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
+              : 'Smoke Bomb: you lose ' + e.amount + ' coin' + (e.amount > 1 ? 's' : ''));
+            break;
+          case 'tax':
+            toast(e.payer === 1
+              ? 'Tax: opponent pays you ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
+              : 'Tax: you pay opponent ' + e.amount + ' coin' + (e.amount > 1 ? 's' : ''));
+            break;
+          case 'forcedDiscard':
+            toast(e.victim === 1
+              ? 'Opponent discards ' + e.count + ' card' + (e.count > 1 ? 's' : '')
+              : 'You discard ' + e.count + ' card' + (e.count > 1 ? 's' : ''));
+            break;
+          default:
+            break; // play, equip, sell, phase, roundStart, gameOver: no toast
         }
-        var oppHadCommerce = hasBonus(oppBoard, 1);
-        oppBoard[m].splice(idx, 1);
-        playerBoard[m].push(target);
-        toast('Agent stolen!');
-        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); }
-        syncIncome();
-        if (oppHadCommerce && !hasBonus(oppBoard, 1)) toast('Opponent Commerce bonus lost');
-      }
-      return true;
-    }
-
-    function applyReturn(m, idx) {
-      var target = playerBoard[m][idx];
-      if (!target) return false;
-      var hadCommerce = hasBonus(playerBoard, 1);
-      playerBoard[m].splice(idx, 1);
-      target.equips = [];
-      target.powerDelta = 0;
-      playerHand.push(target);
-      playerCoins += target.cost;
-      syncIncome();
-      if (hadCommerce && !hasBonus(playerBoard, 1)) toast('Commerce bonus lost');
-      toast('Returned ' + target.name + ' to hand: +' + target.cost + ' coins');
-      return true;
-    }
-
-    function showReveal() {
-      var box = document.getElementById('reveal-cards');
-      box.innerHTML = '';
-      if (oppHand.length === 0) {
-        box.textContent = "Opponent's hand is empty.";
-      } else {
-        oppHand.forEach(function (c) {
-          box.appendChild(cardEl(c, 'big rar-' + c.rarity + ' type-' + c.type));
-        });
-      }
-      document.getElementById('reveal').classList.remove('hidden');
-    }
-
-    function computeResult() {
-      var you = 0, opp = 0, youPower = 0, oppPower = 0;
-      var arbiterYou = false, arbiterOpp = false;
-      playerBoard.forEach(function (arr) {
-        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiterYou = true; });
       });
-      oppBoard.forEach(function (arr) {
-        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiterOpp = true; });
-      });
-      var detail = [];
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        var yp = ministryPower(playerBoard, m);
-        var op = ministryPower(oppBoard, m);
-        youPower += yp; oppPower += op;
-        var w = yp > op ? 'you' : op > yp ? 'opp' : (arbiterYou && !arbiterOpp ? 'you' : arbiterOpp && !arbiterYou ? 'opp' : 'tie');
-        if (w === 'you') you++;
-        else if (w === 'opp') opp++;
-        detail.push({ name: MINISTRIES[m].name, you: yp, opp: op, winner: w });
-      }
-      var base = { you: you, opp: opp, detail: detail };
-      if (you > opp) return Object.assign({ winner: 'you' }, base);
-      if (opp > you) return Object.assign({ winner: 'opp' }, base);
-      if (youPower > oppPower) return Object.assign({ winner: 'you', tiebreak: true }, base);
-      if (oppPower > youPower) return Object.assign({ winner: 'opp', tiebreak: true }, base);
-      return Object.assign({ winner: 'draw' }, base);
     }
 
     function showResult() {
-      var r = computeResult();
+      var r = game.result();
       var title = document.getElementById('result-title');
       var sub = document.getElementById('result-sub');
-      if (r.winner === 'you') {
+      if (r.winner === 0) {
         title.textContent = 'Victory!';
         title.className = 'win';
-      } else if (r.winner === 'opp') {
+      } else if (r.winner === 1) {
         title.textContent = 'Defeat';
         title.className = 'lose';
       } else {
@@ -1506,14 +1296,15 @@
         var nm = document.createElement('span');
         nm.textContent = d.name;
         var sc = document.createElement('span');
-        var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = d.you;
-        var ob = document.createElement('b'); ob.className = 'opp'; ob.textContent = d.opp;
+        var yb = document.createElement('b'); yb.className = 'you'; yb.textContent = d.p0;
+        var ob = document.createElement('b'); ob.className = 'opp'; ob.textContent = d.p1;
         sc.appendChild(yb);
         sc.appendChild(document.createTextNode(' \u2013 '));
         sc.appendChild(ob);
+        var w = d.winner === 0 ? 'you' : d.winner === 1 ? 'opp' : 'tie';
         var mark = document.createElement('span');
-        mark.className = 'mark ' + d.winner;
-        mark.textContent = d.winner === 'you' ? '\u2713' : d.winner === 'opp' ? '\u2717' : '=';
+        mark.className = 'mark ' + w;
+        mark.textContent = w === 'you' ? '\u2713' : w === 'opp' ? '\u2717' : '=';
         row.appendChild(nm);
         row.appendChild(sc);
         row.appendChild(mark);
@@ -1528,8 +1319,6 @@
       document.getElementById('result-banner').classList.remove('hidden');
     }
 
-    function hasBonus(board, m) { return board[m].length >= 2; }
-
     function slotHint(m) {
       var h = document.createElement('span');
       h.className = 'slot-hint';
@@ -1543,75 +1332,6 @@
       t.classList.remove('hidden');
       clearTimeout(toast.timer);
       toast.timer = setTimeout(function () { t.classList.add('hidden'); }, 1800);
-    }
-
-    function startTurn() {
-      // income phase: base income +1, then effective income (base + Commerce bonus); coins refill (no carryover)
-      playerBase += 1;
-      oppBase += 1;
-      syncIncome();
-      playerCoins = playerIncome;
-      oppCoins = oppIncome;
-      // delayed taxes from Sentry / Raider
-      if (pendingTax > 0) {
-        var pt = Math.min(pendingTax, oppCoins);
-        oppCoins -= pt;
-        if (pt > 0) toast('Delayed tax: opponent loses ' + pt + ' coin' + (pt > 1 ? 's' : ''));
-        pendingTax = 0;
-      }
-      // AI's delayed taxes (Sentry / Raider): you lose coins
-      if (pendingTaxOpp > 0) {
-        var pto = Math.min(pendingTaxOpp, playerCoins);
-        playerCoins -= pto;
-        if (pto > 0) toast('Delayed tax: you lose ' + pto + ' coin' + (pto > 1 ? 's' : ''));
-        pendingTaxOpp = 0;
-      }
-      // delayed smoke bomb: -1 coin per your Military agent, counted now (trigger time)
-      if (pendingSmoke > 0) {
-        var ps = Math.min(playerBoard[0].length, oppCoins);
-        oppCoins -= ps;
-        if (ps > 0) toast('Smoke Bomb: opponent loses ' + ps + ' coin' + (ps > 1 ? 's' : ''));
-        pendingSmoke = 0;
-      }
-      // tax: each military bonus adds +1; lesser military power pays
-      var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0) +
-        taxModifier(playerBoard) + taxModifier(oppBoard);
-      if (tax > 0) {
-        var yp = ministryPower(playerBoard, 0);
-        var op = ministryPower(oppBoard, 0);
-        if (yp > op) {
-          var t1 = Math.min(tax, oppCoins);
-          oppCoins -= t1; playerCoins += t1;
-          if (t1 > 0) toast('Tax: opponent pays you ' + t1 + ' coin' + (t1 > 1 ? 's' : ''));
-        } else if (op > yp) {
-          var t2 = Math.min(tax, playerCoins);
-          playerCoins -= t2; oppCoins += t2;
-          if (t2 > 0) toast('Tax: you pay opponent ' + t2 + ' coin' + (t2 > 1 ? 's' : ''));
-        }
-      }
-      // draw
-      var pd = 1 + (hasBonus(playerBoard, 2) ? 1 : 0);
-      var od = 1 + (hasBonus(oppBoard, 2) ? 1 : 0);
-      for (var i = 0; i < pd; i++) draw(playerDeck, playerHand);
-      for (var j = 0; j < od; j++) draw(oppDeck, oppHand);
-      // post-draw delayed discards (Double Agent / Blackmailer)
-      if (pendingPostDraw > 0) {
-        var dc = 0;
-        for (var k = 0; k < pendingPostDraw; k++) {
-          if (oppHand.length > 0) { oppDiscards.push(oppHand.splice(Math.floor(Math.random() * oppHand.length), 1)[0]); dc += 1; }
-        }
-        if (dc > 0) toast('Opponent discards ' + dc + ' card' + (dc > 1 ? 's' : ''));
-        pendingPostDraw = 0;
-      }
-      // AI's Double Agent / Blackmailer: you discard after your draw
-      if (pendingOppPostDraw > 0) {
-        var pdc = 0;
-        for (var k = 0; k < pendingOppPostDraw; k++) {
-          if (playerHand.length > 0) { playerDiscards.push(playerHand.splice(Math.floor(Math.random() * playerHand.length), 1)[0]); pdc += 1; }
-        }
-        if (pdc > 0) toast('You discard ' + pdc + ' card' + (pdc > 1 ? 's' : ''));
-        pendingOppPostDraw = 0;
-      }
     }
 
     function showScreen(name) {
@@ -1865,136 +1585,16 @@
 
     function newGame(useRandom) {
       if (useRandom !== undefined) randomMode = useRandom;
-      turn = 1;
-      gameOver = false;
-      playerBase = 1; oppBase = 1;
-      playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
-      oppIncome = 1; oppCoins = 1;
-      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0; pendingOppPostDraw = 0; pendingTaxOpp = 0;
-      playerDiscards = []; oppDiscards = [];
-      discardUsed = false;
+      pendingTarget = null;
       revealing = false;
       document.getElementById('end-turn').disabled = false;
-      playerDeck = buildDeck(randomMode ? openThreePacks() : deckList); playerHand = [];
-      oppDeck = buildDeck(randomMode ? openThreePacks() : AI_DECK); oppHand = [];
-      playerBoard = [[], [], []];
-      oppBoard = [[], [], []];
-      for (var i = 0; i < STARTING_HAND; i++) {
-        draw(playerDeck, playerHand);
-        draw(oppDeck, oppHand);
-      }
+      game = TCGEngine.createGame({
+        decks: [randomMode ? openThreePacks() : deckList, randomMode ? openThreePacks() : AI_DECK],
+        seed: (Math.random() * 4294967296) >>> 0
+      });
       document.getElementById('result-banner').classList.add('hidden');
       render();
       if (randomMode) toast('Random game: decks built from 3 packs each');
-    }
-
-    function validColumns(board, card) {
-      var cols = [];
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        if (board[m].length >= MAX_PER_MINISTRY) continue;
-        if (ministryLocked(m)) continue;
-        if (card.ministry !== null && card.ministry !== undefined && card.ministry !== m) continue;
-        cols.push(m);
-      }
-      return cols;
-    }
-
-    function oppPoison() {
-      var best = null, bestPower = -Infinity;
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        playerBoard[m].forEach(function (c) {
-          var p = agentPower(c);
-          if (p > bestPower) { bestPower = p; best = c; }
-        });
-      }
-      if (best) best.powerDelta = (best.powerDelta || 0) - 3;
-    }
-
-    function oppSteal() {
-      var cands = [];
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        playerBoard[m].forEach(function (c) { cands.push({ c: c, m: m }); });
-      }
-      cands.sort(function (a, b) { return agentPower(b.c) - agentPower(a.c); });
-      for (var i = 0; i < cands.length; i++) {
-        var m = cands[i].m;
-        if (oppBoard[m].length >= MAX_PER_MINISTRY) continue;
-        var idx = playerBoard[m].indexOf(cands[i].c);
-        if (idx < 0) continue;
-        playerBoard[m].splice(idx, 1);
-        oppBoard[m].push(cands[i].c);
-        syncIncome();
-        return;
-      }
-    }
-
-    function oppEquipTarget(eq) {
-      var cands = [];
-      for (var m = 0; m < MINISTRIES.length; m++) {
-        if (eq.ministry !== null && eq.ministry !== undefined && eq.ministry !== m) continue;
-        oppBoard[m].forEach(function (c) { cands.push({ c: c, m: m }); });
-      }
-      if (cands.length === 0) return null;
-      if (eq.uid === 'dragon-regalia') {
-        // lock the ministry where your lead is largest
-        cands.sort(function (a, b) {
-          var la = ministryPower(oppBoard, a.m) - ministryPower(playerBoard, a.m);
-          var lb = ministryPower(oppBoard, b.m) - ministryPower(playerBoard, b.m);
-          return lb - la;
-        });
-      }
-      return cands[0].c;
-    }
-
-    function oppOnPlay(card) {
-      switch (card.uid) {
-        case 'broker': oppCoins += 1; break;
-        case 'moneylender': oppCoins += 3; break;
-        case 'diplomat': oppCoins += 1; draw(oppDeck, oppHand); break;
-        case 'treasurer': oppBase += 1; syncIncome(); break;
-        case 'grand-treasurer': oppBase += 3; syncIncome(); break;
-        case 'lookout': draw(oppDeck, oppHand); break;
-        case 'spy': draw(oppDeck, oppHand); break;
-        case 'mastermind': draw(oppDeck, oppHand); draw(oppDeck, oppHand); break;
-        case 'smuggler': draw(oppDeck, oppHand); break;
-        case 'sentry': pendingTaxOpp += 1; break;
-        case 'raider': pendingTaxOpp += 1; break;
-        case 'double-agent': pendingOppPostDraw += 1; break;
-        case 'blackmailer': pendingOppPostDraw += 1; break;
-        case 'poisoner': oppPoison(); break;
-        case 'grand-spymaster': oppSteal(); break;
-      }
-    }
-
-    function opponentPlay() {
-      while (true) {
-        var affordable = oppHand
-          .filter(function (c) { return c.type === 'agent' && c.cost <= oppCoins && validColumns(oppBoard, c).length > 0; })
-          .sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
-        if (affordable.length === 0) break;
-        var card = affordable[0];
-        var open = validColumns(oppBoard, card);
-        oppHand.splice(oppHand.indexOf(card), 1);
-        oppCoins -= card.cost;
-        var om = open[Math.floor(Math.random() * open.length)];
-        oppBoard[om].push(card);
-        oppOnPlay(card);
-      }
-      // equips: attach affordable equips to your agents
-      while (true) {
-        var eqs = oppHand
-          .filter(function (c) { return c.type === 'equip' && c.cost <= oppCoins && oppEquipTarget(c) !== null; })
-          .sort(function (a, b) { return b.cost - a.cost; });
-        if (eqs.length === 0) break;
-        var eq = eqs[0];
-        var tgt = oppEquipTarget(eq);
-        oppHand.splice(oppHand.indexOf(eq), 1);
-        oppCoins -= eq.cost;
-        tgt.equips.push(eq);
-        if (eq.uid === 'dragon-regalia') eq._lockedFrom = turn;
-        if (eq.coinOnAttach) oppCoins += eq.coinOnAttach;
-        if (eq.drawOnAttach) draw(oppDeck, oppHand);
-      }
     }
 
     // ---- drag & drop (pointer events: touch + mouse) ----
@@ -2019,15 +1619,17 @@
     var zoomTimer = null, zoomPress = null, zoomOpen = false;
 
     function cardForZoomEl(el) {
+      var V = game ? game.view(0) : null;
       var handEl = el.closest('#player-hand .card');
-      if (handEl) return playerHand[parseInt(handEl.dataset.handIndex, 10)] || null;
+      if (handEl) return V ? V.me.hand[parseInt(handEl.dataset.handIndex, 10)] || null : null;
       var col = el.closest('#board .column');
       if (!col) return null;
       var slot = el.closest('.slot');
       if (!slot) return null;
       var m = parseInt(col.dataset.ministry, 10);
       var idx = parseInt(slot.dataset.slotIndex, 10);
-      var board = el.classList.contains('opp') ? oppBoard : playerBoard;
+      if (!V) return null;
+      var board = el.classList.contains('opp') ? V.opp.board : V.me.board;
       return board[m][idx] || null;
     }
 
@@ -2094,7 +1696,7 @@
     }, true);
 
     document.addEventListener('pointerdown', function (e) {
-      if (gameOver || revealing) return;
+      if ((game && game.view(0).gameOver) || revealing) return;
       if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
       if (pendingTarget) {
         if (pendingTarget.kind === 'return') {
@@ -2104,8 +1706,11 @@
             var rm = parseInt(rcol.dataset.ministry, 10);
             var rslot = rt.closest('.slot');
             var ridx = parseInt(rslot.dataset.slotIndex, 10);
-            if (applyReturn(rm, ridx)) pendingTarget = null;
+            toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex, target: { ministry: rm, slot: ridx } }));
+            pendingTarget = null;
           } else {
+            // Cancelling a Pearl return still discards it, just without the return.
+            toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex }));
             pendingTarget = null;
             toast('Targeting cancelled');
           }
@@ -2119,8 +1724,11 @@
           var tm = parseInt(tcol.dataset.ministry, 10);
           var tslot = ot.closest('.slot');
           var tidx = parseInt(tslot.dataset.slotIndex, 10);
-          if (applyTarget(pendingTarget.kind, tm, tidx)) pendingTarget = null;
+          toastEvents(game.apply(0, { kind: 'play', handIndex: pendingTarget.handIndex, ministry: pendingTarget.ministry, target: { ministry: tm, slot: tidx } }));
+          pendingTarget = null;
         } else {
+          // Cancelling a Poisoner / steal still plays the card, without the effect.
+          toastEvents(game.apply(0, { kind: 'play', handIndex: pendingTarget.handIndex, ministry: pendingTarget.ministry }));
           pendingTarget = null;
           toast('Targeting cancelled');
         }
@@ -2128,21 +1736,11 @@
         e.preventDefault();
         return;
       }
-      if (pendingDiscard) {
-        var h = e.target.closest ? e.target.closest('#player-hand .card') : null;
-        if (h) {
-          playerHand.splice(parseInt(h.dataset.handIndex, 10), 1);
-          pendingDiscard = false;
-          toast('Discarded');
-          render();
-        }
-        e.preventDefault();
-        return;
-      }
       // long-press zoom is armed by the capture-phase handler above
       var t = e.target.closest('#player-hand .card.face-up');
-      if (!t) return;
-      var card = playerHand[parseInt(t.dataset.handIndex, 10)];
+      if (!t || !game) return;
+      var V = game.view(0);
+      var card = V.me.hand[parseInt(t.dataset.handIndex, 10)];
       if (!card) return;
 
       var ghost = t.cloneNode(true);
@@ -2151,7 +1749,10 @@
       ghost.style.top = e.clientY + 'px';
       document.body.appendChild(ghost);
 
-      drag = { ghost: ghost, card: card, index: parseInt(t.dataset.handIndex, 10), target: null };
+      // Legal actions are frozen at drag start: nothing changes mid-gesture,
+      // so the pointermove highlights and the drop both read this same list.
+      drag = { ghost: ghost, card: card, index: parseInt(t.dataset.handIndex, 10), target: null,
+        legal: game.legalActions(0), view: V };
       e.preventDefault();
     });
 
@@ -2166,7 +1767,7 @@
       var col = under && under.closest ? under.closest('.column') : null;
       var ds = under && under.closest ? under.closest('#discard-slot') : null;
       if (ds) {
-        if (!discardUsed) {
+        if (!drag.view.me.discardUsed) {
           ds.classList.add('drop-ok');
           drag.target = { type: 'discard' };
         } else {
@@ -2178,8 +1779,9 @@
           var am = parseInt(ael.closest('.column').dataset.ministry, 10);
           var aslot = ael.closest('.slot');
           var aidx = parseInt(aslot.dataset.slotIndex, 10);
-          var aok = drag.card.cost <= playerCoins && !!playerBoard[am][aidx] &&
-            (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === am);
+          var aok = drag.legal.some(function (a) {
+            return a.kind === 'equip' && a.handIndex === drag.index && a.ministry === am && a.slot === aidx;
+          });
           ael.classList.add(aok ? 'drop-ok-card' : 'drop-full-card');
           drag.target = aok ? { type: 'equip', m: am, idx: aidx } : null;
         } else {
@@ -2187,10 +1789,9 @@
         }
       } else if (col && drag.card.type === 'agent') {
         var m = parseInt(col.dataset.ministry, 10);
-        var ok = drag.card.cost <= playerCoins &&
-          playerBoard[m].length < MAX_PER_MINISTRY &&
-          !ministryLocked(m) &&
-          (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === m);
+        var ok = drag.legal.some(function (a) {
+          return a.kind === 'play' && a.handIndex === drag.index && a.ministry === m;
+        });
         col.classList.add(ok ? 'drop-ok' : 'drop-full');
         drag.target = ok ? { type: 'ministry', m: m } : null;
       } else {
@@ -2203,33 +1804,37 @@
       if (!drag) return;
       if (commit && drag.target) {
         if (drag.target.type === 'discard') {
-          playerHand.splice(drag.index, 1);
-          playerDiscards.push(drag.card);
-          playerCoins += sellValue();
-          if (drag.card.type === 'item' && ITEM_FX[drag.card.uid]) ITEM_FX[drag.card.uid]();
-          discardUsed = true;
+          if (drag.card.type === 'item' && drag.card.uid === 'dragon-pearl' &&
+              drag.view.me.board.some(function (arr) { return arr.length > 0; })) {
+            // The Pearl's return target is picked next; the sell itself applies
+            // once the target is tapped (or is cancelled, without the return).
+            pendingTarget = { kind: 'return', handIndex: drag.index };
+            toast('Dragon Pearl: tap one of your agents to return it');
+          } else {
+            toastEvents(game.apply(0, { kind: 'sell', handIndex: drag.index }));
+          }
         } else if (drag.target.type === 'equip') {
-          playerHand.splice(drag.index, 1);
-          playerCoins -= drag.card.cost;
-          var ag = playerBoard[drag.target.m][drag.target.idx];
-          ag.equips.push(drag.card);
-          if (drag.card.uid === 'dragon-regalia') drag.card._lockedFrom = turn;
-          if (drag.card.coinOnAttach) {
-            playerCoins += drag.card.coinOnAttach;
-            toast('+' + drag.card.coinOnAttach + ' coins');
-          }
-          if (drag.card.drawOnAttach) {
-            draw(playerDeck, playerHand);
-            toast('Drew a card');
-          }
+          toastEvents(game.apply(0, { kind: 'equip', handIndex: drag.index, ministry: drag.target.m, slot: drag.target.idx }));
         } else {
           var pm = drag.target.m;
-          playerHand.splice(drag.index, 1);
-          playerCoins -= drag.card.cost;
-          playerBoard[pm].push(drag.card);
-          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); }
-          onPlay(drag.card);
-          syncIncome();
+          if (drag.card.type === 'agent' && (drag.card.uid === 'poisoner' || drag.card.uid === 'grand-spymaster')) {
+            var V = game.view(0);
+            var oppHas = V.opp.board.some(function (arr) { return arr.length > 0; });
+            // Steal also needs room somewhere; weaken needs no room.
+            var mySpace = drag.card.uid === 'poisoner' ||
+              V.me.board.some(function (arr) { return arr.length < MAX_PER_MINISTRY; });
+            if (oppHas && mySpace) {
+              pendingTarget = { kind: drag.card.uid === 'poisoner' ? 'weaken' : 'steal',
+                handIndex: drag.index, ministry: pm };
+              toast(drag.card.uid === 'poisoner'
+                ? "Poisoner: tap an opponent's agent"
+                : "Tap an opponent's agent to steal it");
+            } else {
+              toastEvents(game.apply(0, { kind: 'play', handIndex: drag.index, ministry: pm }));
+            }
+          } else {
+            toastEvents(game.apply(0, { kind: 'play', handIndex: drag.index, ministry: pm }));
+          }
         }
       }
       drag.ghost.remove();
@@ -2250,15 +1855,26 @@
     });
 
     document.getElementById('end-turn').addEventListener('click', function () {
-      if (gameOver || revealing) return; // restart now lives in the result modal
-      pendingTarget = null;
-      pendingDiscard = false;
+      if (!game || game.view(0).gameOver || revealing) return; // restart now lives in the result modal
+      // A targeting prompt left open resolves as a fizzle, as before: the
+      // card was already committed, only its effect is dropped.
+      if (pendingTarget) {
+        if (pendingTarget.kind === 'return') {
+          toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex }));
+        } else {
+          toastEvents(game.apply(0, { kind: 'play', handIndex: pendingTarget.handIndex, ministry: pendingTarget.ministry }));
+        }
+        pendingTarget = null;
+      }
       revealing = true;
       document.getElementById('end-turn').disabled = true;
-      opponentPlay();
-      syncIncome();
-      if (turn >= MAX_TURNS) {
-        gameOver = true;
+      game.submit(0); // hand the phase to the AI
+      var a;
+      while ((a = TCGEngine.greedyPolicy(game.view(1), game.rng)).kind !== 'submit') {
+        game.apply(1, a); // AI effects are silent, as before
+      }
+      if (game.view(0).turn >= MAX_TURNS) {
+        game.submit(1); // turn 6: no next round, the game ends here
         revealing = false;
         document.getElementById('end-turn').disabled = false;
         render();
@@ -2267,9 +1883,7 @@
         render(); // reveal what the AI played this turn
         toast("Opponent's turn");
         setTimeout(function () {
-          turn += 1;
-          discardUsed = false;
-          startTurn(); // income -> tax -> draw, both players
+          toastEvents(game.submit(1)); // income -> tax -> draw, both players
           revealing = false;
           document.getElementById('end-turn').disabled = false;
           render();
