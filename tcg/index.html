@@ -120,7 +120,7 @@
     font-size: 1rem; font-weight: 700;
     padding: 0.8rem 2rem;
     border: 2px solid #1c1915; border-radius: 999px;
-    background: transparent; color: #1c1915;
+    background: rgba(250, 247, 238, 0.96); color: #1c1915;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -504,6 +504,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #end-turn:active { transform: scale(0.97); }
+  #end-turn:disabled { opacity: 0.6; }
   #player-zone { margin-top: 0.75rem; }
 
   #result-banner {
@@ -659,7 +660,7 @@
     <div id="board"></div>
     <div id="side-panel">
       <p id="turn-counter">Turn 1 of 6</p>
-      <button id="end-turn" type="button">End Turn</button>
+      <button id="end-turn" type="button">Submit Turn</button>
       <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
     </div>
   </section>
@@ -836,7 +837,8 @@
 
     var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
     var playerBase, oppBase;
-    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw;
+    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw, pendingOppPostDraw;
+    var revealing = false;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
 
@@ -1175,7 +1177,7 @@
       document.getElementById('opp-income-num').textContent = gameOver ? '' : oppIncome;
       document.getElementById('income-num').textContent = gameOver ? '' : playerIncome;
       document.getElementById('end-turn').textContent =
-        turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'End Turn';
+        turn === MAX_TURNS && !gameOver ? 'Finish Game' : 'Submit Turn';
       renderBoard();
       renderHand();
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
@@ -1439,6 +1441,15 @@
         if (dc > 0) toast('Opponent discards ' + dc + ' card' + (dc > 1 ? 's' : ''));
         pendingPostDraw = 0;
       }
+      // AI's Double Agent / Blackmailer: you discard after your draw
+      if (pendingOppPostDraw > 0) {
+        var pdc = 0;
+        for (var k = 0; k < pendingOppPostDraw; k++) {
+          if (playerHand.length > 0) { playerHand.splice(Math.floor(Math.random() * playerHand.length), 1); pdc += 1; }
+        }
+        if (pdc > 0) toast('You discard ' + pdc + ' card' + (pdc > 1 ? 's' : ''));
+        pendingOppPostDraw = 0;
+      }
     }
 
     function showScreen(name) {
@@ -1697,8 +1708,10 @@
       playerBase = 1; oppBase = 1;
       playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
       oppIncome = 1; oppCoins = 1;
-      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0;
+      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0; pendingOppPostDraw = 0;
       discardUsed = false;
+      revealing = false;
+      document.getElementById('end-turn').disabled = false;
       playerDeck = buildDeck(randomMode ? openThreePacks() : deckList); playerHand = [];
       oppDeck = buildDeck(randomMode ? openThreePacks() : AI_DECK); oppHand = [];
       playerBoard = [[], [], []];
@@ -1735,6 +1748,7 @@
         oppCoins -= card.cost;
         var om = open[Math.floor(Math.random() * open.length)];
         oppBoard[om].push(card);
+        if (card.uid === 'double-agent' || card.uid === 'blackmailer') pendingOppPostDraw += 1;
       }
     }
 
@@ -1835,7 +1849,7 @@
     }, true);
 
     document.addEventListener('pointerdown', function (e) {
-      if (gameOver) return;
+      if (gameOver || revealing) return;
       if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
       if (pendingTarget) {
         if (pendingTarget.kind === 'return') {
@@ -1989,20 +2003,30 @@
     });
 
     document.getElementById('end-turn').addEventListener('click', function () {
-      if (gameOver) return; // restart now lives in the result modal
+      if (gameOver || revealing) return; // restart now lives in the result modal
       pendingTarget = null;
       pendingDiscard = false;
+      revealing = true;
+      document.getElementById('end-turn').disabled = true;
       opponentPlay();
       syncIncome();
       if (turn >= MAX_TURNS) {
         gameOver = true;
+        revealing = false;
+        document.getElementById('end-turn').disabled = false;
         render();
         showResult();
       } else {
-        turn += 1;
-        discardUsed = false;
-        startTurn(); // income -> tax -> draw, both players
-        render();
+        render(); // reveal what the AI played this turn
+        toast("Opponent's turn");
+        setTimeout(function () {
+          turn += 1;
+          discardUsed = false;
+          startTurn(); // income -> tax -> draw, both players
+          revealing = false;
+          document.getElementById('end-turn').disabled = false;
+          render();
+        }, 1200);
       }
     });
 
