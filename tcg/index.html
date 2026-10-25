@@ -837,7 +837,7 @@
 
     var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
     var playerBase, oppBase;
-    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw, pendingOppPostDraw;
+    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw, pendingOppPostDraw, pendingTaxOpp;
     var revealing = false;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
@@ -1308,16 +1308,19 @@
 
     function computeResult() {
       var you = 0, opp = 0, youPower = 0, oppPower = 0;
-      var arbiter = false;
+      var arbiterYou = false, arbiterOpp = false;
       playerBoard.forEach(function (arr) {
-        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiter = true; });
+        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiterYou = true; });
+      });
+      oppBoard.forEach(function (arr) {
+        arr.forEach(function (c) { if (c.uid === 'imperial-arbiter') arbiterOpp = true; });
       });
       var detail = [];
       for (var m = 0; m < MINISTRIES.length; m++) {
         var yp = ministryPower(playerBoard, m);
         var op = ministryPower(oppBoard, m);
         youPower += yp; oppPower += op;
-        var w = yp > op ? 'you' : op > yp ? 'opp' : (arbiter ? 'you' : 'tie');
+        var w = yp > op ? 'you' : op > yp ? 'opp' : (arbiterYou && !arbiterOpp ? 'you' : arbiterOpp && !arbiterYou ? 'opp' : 'tie');
         if (w === 'you') you++;
         else if (w === 'opp') opp++;
         detail.push({ name: MINISTRIES[m].name, you: yp, opp: op, winner: w });
@@ -1403,6 +1406,13 @@
         oppCoins -= pt;
         if (pt > 0) toast('Delayed tax: opponent loses ' + pt + ' coin' + (pt > 1 ? 's' : ''));
         pendingTax = 0;
+      }
+      // AI's delayed taxes (Sentry / Raider): you lose coins
+      if (pendingTaxOpp > 0) {
+        var pto = Math.min(pendingTaxOpp, playerCoins);
+        playerCoins -= pto;
+        if (pto > 0) toast('Delayed tax: you lose ' + pto + ' coin' + (pto > 1 ? 's' : ''));
+        pendingTaxOpp = 0;
       }
       // delayed smoke bomb: -1 coin per your Military agent, counted now (trigger time)
       if (pendingSmoke > 0) {
@@ -1708,7 +1718,7 @@
       playerBase = 1; oppBase = 1;
       playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
       oppIncome = 1; oppCoins = 1;
-      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0; pendingOppPostDraw = 0;
+      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0; pendingOppPostDraw = 0; pendingTaxOpp = 0;
       discardUsed = false;
       revealing = false;
       document.getElementById('end-turn').disabled = false;
@@ -1736,6 +1746,73 @@
       return cols;
     }
 
+    function oppPoison() {
+      var best = null, bestPower = -Infinity;
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        playerBoard[m].forEach(function (c) {
+          var p = agentPower(c);
+          if (p > bestPower) { bestPower = p; best = c; }
+        });
+      }
+      if (best) best.powerDelta = (best.powerDelta || 0) - 3;
+    }
+
+    function oppSteal() {
+      var cands = [];
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        playerBoard[m].forEach(function (c) { cands.push({ c: c, m: m }); });
+      }
+      cands.sort(function (a, b) { return agentPower(b.c) - agentPower(a.c); });
+      for (var i = 0; i < cands.length; i++) {
+        var m = cands[i].m;
+        if (oppBoard[m].length >= MAX_PER_MINISTRY) continue;
+        var idx = playerBoard[m].indexOf(cands[i].c);
+        if (idx < 0) continue;
+        playerBoard[m].splice(idx, 1);
+        oppBoard[m].push(cands[i].c);
+        syncIncome();
+        return;
+      }
+    }
+
+    function oppEquipTarget(eq) {
+      var cands = [];
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        if (eq.ministry !== null && eq.ministry !== undefined && eq.ministry !== m) continue;
+        oppBoard[m].forEach(function (c) { cands.push({ c: c, m: m }); });
+      }
+      if (cands.length === 0) return null;
+      if (eq.uid === 'dragon-regalia') {
+        // lock the ministry where your lead is largest
+        cands.sort(function (a, b) {
+          var la = ministryPower(oppBoard, a.m) - ministryPower(playerBoard, a.m);
+          var lb = ministryPower(oppBoard, b.m) - ministryPower(playerBoard, b.m);
+          return lb - la;
+        });
+      }
+      return cands[0].c;
+    }
+
+    function oppOnPlay(card) {
+      switch (card.uid) {
+        case 'broker': oppCoins += 1; break;
+        case 'moneylender': oppCoins += 3; break;
+        case 'diplomat': oppCoins += 1; draw(oppDeck, oppHand); break;
+        case 'treasurer': oppBase += 1; syncIncome(); break;
+        case 'grand-treasurer': oppBase += 3; syncIncome(); break;
+        case 'lookout': draw(oppDeck, oppHand); break;
+        case 'spy': draw(oppDeck, oppHand); break;
+        case 'mastermind': draw(oppDeck, oppHand); draw(oppDeck, oppHand); break;
+        case 'smuggler': draw(oppDeck, oppHand); break;
+        case 'sentry': pendingTaxOpp += 1; break;
+        case 'raider': pendingTaxOpp += 1; break;
+        case 'double-agent': pendingOppPostDraw += 1; break;
+        case 'blackmailer': pendingOppPostDraw += 1; break;
+        case 'poisoner': oppPoison(); break;
+        case 'grand-spymaster': oppSteal(); break;
+      }
+    }
+
     function opponentPlay() {
       while (true) {
         var affordable = oppHand
@@ -1748,7 +1825,21 @@
         oppCoins -= card.cost;
         var om = open[Math.floor(Math.random() * open.length)];
         oppBoard[om].push(card);
-        if (card.uid === 'double-agent' || card.uid === 'blackmailer') pendingOppPostDraw += 1;
+        oppOnPlay(card);
+      }
+      // equips: attach affordable equips to your agents
+      while (true) {
+        var eqs = oppHand
+          .filter(function (c) { return c.type === 'equip' && c.cost <= oppCoins && oppEquipTarget(c) !== null; })
+          .sort(function (a, b) { return b.cost - a.cost; });
+        if (eqs.length === 0) break;
+        var eq = eqs[0];
+        var tgt = oppEquipTarget(eq);
+        oppHand.splice(oppHand.indexOf(eq), 1);
+        oppCoins -= eq.cost;
+        tgt.equips.push(eq);
+        if (eq.coinOnAttach) oppCoins += eq.coinOnAttach;
+        if (eq.drawOnAttach) draw(oppDeck, oppHand);
       }
     }
 
