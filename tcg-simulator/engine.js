@@ -645,12 +645,14 @@
   }
 
   // ---------- greedy policy (the current AI, as a view -> action function) ----------
-  // Decision rule, unchanged from the old opponentPlay: play the affordable
-  // agent with the highest cost (then power) to a random valid column, then
-  // attach the affordable equip with the highest cost. Poisoner weakens the
-  // opponent's strongest agent; Grand Spymaster steals the strongest agent
-  // it has room for; Regalia locks the ministry where its lead is largest.
-  // Returns { kind: 'submit' } when nothing is playable. Uses ONLY the view.
+  // Decision rule: first consider a simple sell (see below), then play the
+  // affordable agent with the highest cost (then power) to the best-scored
+  // valid column, then attach the affordable equip with the highest cost.
+  // Poisoner weakens the opponent's strongest agent; Grand Spymaster steals
+  // the strongest agent it has room for; Regalia locks the ministry where
+  // its lead is largest. Returns { kind: 'submit' } when nothing is
+  // playable. Uses ONLY the view. Deterministic: rng is kept for API
+  // compatibility but no longer drives placement.
   function greedyPolicy(view, rng) {
     rng = rng || Math.random;
     var me = view.me, foe = view.opp;
@@ -664,6 +666,139 @@
       }
       return cols;
     }
+    // Keep-value of a hand card, for choosing sell fodder: low = sellable.
+    // Ability cards and Auctioneer are protected; ministry-dead cards are
+    // cheapest; Dragon Pearl is never affordability fodder (its targeted
+    // return is handled separately, and is left inert in this simple pass).
+    function keepScore(c) {
+      if (c.uid === 'dragon-pearl') return 999;
+      if (c.type === 'agent') {
+        var s = c.power || 0;
+        if (['treasurer', 'grand-treasurer', 'broker', 'moneylender', 'diplomat',
+             'lookout', 'spy', 'mastermind', 'smuggler', 'tax-collector',
+             'grand-marshal', 'sentry', 'raider', 'poisoner', 'grand-spymaster',
+             'imperial-arbiter', 'quartermaster', 'veteran-sergeant'].indexOf(c.uid) >= 0) s += 3;
+        if (c.uid === 'auctioneer') s += 10;
+        if (c.ministry !== null && c.ministry !== undefined &&
+            (me.board[c.ministry].length >= MAX_PER_MINISTRY || view.locked[c.ministry])) s = -10;
+        return s;
+      }
+      if (c.type === 'equip') return c.attachPower || 0;
+      if (c.type === 'item') {
+        if (c.uid === 'coin-pouch') return me.board[1].length > 0 ? 5 : 0;
+        if (c.uid === 'abacus') return me.board[1].length > 0 ? 5 : 0;
+        if (c.uid === 'smoke-bomb') return me.board[0].length > 0 ? 5 : 0;
+        if (c.uid === 'sealed-letter') return me.deckCount > 0 ? 5 : 0;
+        return 2;
+      }
+      return 0;
+    }
+    // Score a ministry for placing `card`: flipping to a lead beats closing
+    // a gap, which beats padding a lead; triggering the 2nd-slot bonus and
+    // securing a second winning ministry are both worth extra. Ties go to
+    // the lowest ministry index, so placement is deterministic.
+    function bestCol(card, cols) {
+      var leadsBefore = 0;
+      for (var mm = 0; mm < 3; mm++) {
+        if (ministryPower(me.board, mm) > ministryPower(foe.board, mm)) leadsBefore++;
+      }
+      var bestM = cols[0], bestS = -Infinity;
+      cols.forEach(function (m) {
+        var sim = me.board.map(function (arr) { return arr.slice(); });
+        sim[m] = sim[m].concat([card]);
+        var myBefore = ministryPower(me.board, m), foePow = ministryPower(foe.board, m);
+        var myAfter = ministryPower(sim, m), gain = myAfter - myBefore;
+        var score = 0;
+        if (me.board[m].length === 1) score += 4;
+        if (myBefore < foePow && myAfter > foePow) score += 20;
+        else if (myBefore < foePow && myAfter === foePow) score += 12;
+        else if (myBefore < foePow) score += gain;
+        else score += gain * 0.25;
+        var leadsAfter = leadsBefore;
+        if (myBefore <= foePow && myAfter > foePow) leadsAfter++;
+        if (leadsAfter > leadsBefore) score += 15;
+        if (score > bestS) { bestS = score; bestM = m; }
+      });
+      return bestM;
+    }
+    // ---- simple sell logic (once per turn; coins do not carry over, so a
+    // sell is only worth it if its coins get spent this turn, or the sold
+    // Item's trigger is itself the payoff). Runs before playing, because
+    // the policy loop re-runs after the sell and then plays with the new
+    // coin total. Dragon Pearl sells are left out of this pass.
+    if (!me.discardUsed) {
+      var sellValue = me.sellValue;
+      var affordableExists = false;
+      me.hand.forEach(function (c) {
+        if (c.type === 'agent' && c.cost <= me.coins && validCols(c, me.board).length > 0) affordableExists = true;
+        if (c.type === 'equip' && c.cost <= me.coins) {
+          for (var mm = 0; mm < 3; mm++) {
+            if (c.ministry !== null && c.ministry !== undefined && c.ministry !== mm) continue;
+            if (me.board[mm].length > 0) affordableExists = true;
+          }
+        }
+      });
+      // A play/equip that is unaffordable now but affordable after a sell.
+      var bestUnaff = null, bestUnaffHi = -1, bestUnaffPow = -Infinity;
+      me.hand.forEach(function (c, hi) {
+        if (c.cost === null || c.cost === undefined || c.cost <= me.coins || c.cost > me.coins + sellValue) return;
+        var ok = false, pow = 0;
+        if (c.type === 'agent' && validCols(c, me.board).length > 0) { ok = true; pow = c.power || 0; }
+        if (c.type === 'equip') {
+          for (var mm = 0; mm < 3; mm++) {
+            if (c.ministry !== null && c.ministry !== undefined && c.ministry !== mm) continue;
+            if (me.board[mm].length > 0) { ok = true; pow = c.attachPower || 0; }
+          }
+        }
+        if (ok && (!bestUnaff || c.cost > bestUnaff.cost ||
+            (c.cost === bestUnaff.cost && pow > bestUnaffPow))) {
+          bestUnaff = c; bestUnaffHi = hi; bestUnaffPow = pow;
+        }
+      });
+      if (bestUnaff) {
+        var fodderHi = -1, fodderScore = Infinity, fodderPow = 0;
+        me.hand.forEach(function (c, hi) {
+          if (hi === bestUnaffHi) return;
+          var s = keepScore(c);
+          if (s < fodderScore) {
+            fodderScore = s; fodderHi = hi;
+            fodderPow = c.type === 'equip' ? (c.attachPower || 0) : (c.power || 0);
+          }
+        });
+        if (fodderHi >= 0) {
+          var isAbility = ['treasurer', 'grand-treasurer', 'broker', 'moneylender', 'diplomat',
+            'lookout', 'spy', 'mastermind', 'smuggler', 'tax-collector', 'grand-marshal',
+            'sentry', 'raider', 'poisoner', 'grand-spymaster', 'imperial-arbiter',
+            'quartermaster', 'veteran-sergeant'].indexOf(bestUnaff.uid) >= 0;
+          // Sell when stuck (no affordable play at all), or when the trade
+          // is clearly uphill: an ability card, or strictly more power.
+          if (!affordableExists || isAbility || bestUnaffPow > fodderPow + 1) {
+            return { kind: 'sell', handIndex: fodderHi };
+          }
+        }
+      }
+      // No sell-to-afford: if nothing is playable this turn, sell an Item
+      // for its trigger alone. Pearl is skipped (targeted return).
+      if (!affordableExists) {
+        var itemSell = -1;
+        me.hand.forEach(function (c, hi) {
+          if (itemSell >= 0) return;
+          if (c.type !== 'item') return;
+          if (c.uid === 'sealed-letter' && me.deckCount > 0) itemSell = hi;
+          else if (c.uid === 'abacus' && me.board[1].length > 0 && view.turn < MAX_TURNS) itemSell = hi;
+          else if (c.uid === 'smoke-bomb' && me.board[0].length > 0 && view.turn < MAX_TURNS) itemSell = hi;
+          else if (c.uid === 'coin-pouch' && me.board[1].length > 0) {
+            var total = me.coins + sellValue + me.board[1].length;
+            var unlocks = false;
+            me.hand.forEach(function (d) {
+              if (d.cost !== null && d.cost !== undefined && d.cost > me.coins && d.cost <= total) unlocks = true;
+            });
+            if (unlocks) itemSell = hi;
+          }
+        });
+        if (itemSell >= 0) return { kind: 'sell', handIndex: itemSell };
+      }
+    }
     var bestCard = null, bestHi = -1;
     me.hand.forEach(function (c, hi) {
       if (c.type !== 'agent' || c.cost > me.coins) return;
@@ -673,7 +808,7 @@
     });
     if (bestCard) {
       var cols = validCols(bestCard, me.board);
-      var m = cols[Math.floor(rng() * cols.length)];
+      var m = bestCol(bestCard, cols);
       var act = { kind: 'play', handIndex: bestHi, ministry: m };
       if (bestCard.uid === 'poisoner') {
         var bp = null, bpPow = -Infinity;
