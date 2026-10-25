@@ -630,6 +630,7 @@
     <h1 id="menu-title">Imperial Rivals</h1>
     <div id="menu-buttons">
       <button id="play-btn" class="menu-btn" type="button">Play</button>
+      <button id="random-btn" class="menu-btn" type="button">Random Game</button>
       <button id="pack-btn" class="menu-btn" type="button">Open Pack</button>
       <button id="deck-btn" class="menu-btn" type="button">Deck</button>
       <button id="collection-btn" class="menu-btn" type="button">Collection</button>
@@ -750,79 +751,79 @@
     var MAX_TURNS = 6;
     var STARTING_HAND = 4;
     var MINISTRIES = [
-      { name: 'Militia',  color: 'red' },
+      { name: 'Military',  color: 'red' },
       { name: 'Commerce', color: 'yellow' },
       { name: 'Intrigue', color: 'blue' }
     ];
     var MAX_PER_MINISTRY = 3;
     var SLOT_HINT = ['tax +1', 'income +1', 'draw +1'];
     var BONUS_MSG = [
-      'Militia bonus: tax +1 going forward',
+      'Military bonus: tax +1 going forward',
       'Commerce bonus: +1 income',
       'Intrigue bonus: draw +1 card each turn'
     ];
 
     var SET1 = [
-      // Militia agents (11)
-      { uid: 'militia-recruit', name: 'Militia Recruit', type: 'agent', cost: 2, power: 6, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'militia-captain', name: 'Militia Captain', type: 'agent', cost: 4, power: 12, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'militia-levy', name: 'Militia Levy', type: 'agent', cost: 1, power: 3, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'sentry', name: 'Sentry', type: 'agent', cost: 1, power: 2, ministry: 0, rarity: 'C', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
-      { uid: 'man-at-arms', name: 'Imperial Guard', type: 'agent', cost: 3, power: 9, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'quartermaster', name: 'Provisioner', type: 'agent', cost: 5, power: 12, ministry: 0, rarity: 'C', text: 'On play: opponent loses 2 coins at the start of your next turn.' },
-      { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 16, ministry: 0, rarity: 'C', text: '' },
-      { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 7, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
-      { uid: 'veteran-sergeant', name: 'Drillmaster', type: 'agent', cost: 4, power: 8, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Militia.' },
-      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 6, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
-      { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 15, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
+      // Military agents (11)
+      { uid: 'militia-recruit', name: 'Recruit', type: 'agent', cost: 2, power: 3, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'militia-captain', name: 'Captain', type: 'agent', cost: 4, power: 6, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'militia-levy', name: 'Levy', type: 'agent', cost: 1, power: 2, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'sentry', name: 'Sentry', type: 'agent', cost: 1, power: 1, ministry: 0, rarity: 'C', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
+      { uid: 'man-at-arms', name: 'Imperial Guard', type: 'agent', cost: 3, power: 5, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'quartermaster', name: 'Provisioner', type: 'agent', cost: 5, power: 6, ministry: 0, rarity: 'C', text: 'Your other Military agents get +2 power.' },
+      { uid: 'warlord', name: 'Warlord', type: 'agent', cost: 6, power: 9, ministry: 0, rarity: 'C', text: '' },
+      { uid: 'tax-collector', name: 'Tax Collector', type: 'agent', cost: 3, power: 4, ministry: 0, rarity: 'U', text: 'The tax amount is +1.' },
+      { uid: 'veteran-sergeant', name: 'Drillmaster', type: 'agent', cost: 4, power: 4, ministry: 0, rarity: 'U', text: '+2 power for each other agent in your Military.' },
+      { uid: 'raider', name: 'Raider', type: 'agent', cost: 3, power: 4, ministry: 0, rarity: 'U', text: 'On play: opponent loses 1 coin at the start of your next turn.' },
+      { uid: 'grand-marshal', name: 'Grand Marshal', type: 'agent', cost: 6, power: 7, ministry: 0, rarity: 'R', text: 'The tax amount is +2.' },
       // Commerce agents (11)
-      { uid: 'peddler', name: 'Peddler', type: 'agent', cost: 2, power: 6, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'merchant-prince', name: 'Merchant Prince', type: 'agent', cost: 4, power: 12, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'errand-boy', name: 'Errand Boy', type: 'agent', cost: 1, power: 3, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'broker', name: 'Broker', type: 'agent', cost: 1, power: 2, ministry: 1, rarity: 'C', text: 'On play: gain 1 coin.' },
-      { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 9, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 12, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
-      { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 16, ministry: 1, rarity: 'C', text: '' },
-      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 8, ministry: 1, rarity: 'U', text: 'On play: +1 income.' },
-      { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 4, ministry: 1, rarity: 'U', text: 'On play: draw a card, then discard a card.' },
-      { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 6, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
-      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 12, ministry: 1, rarity: 'R', text: 'On play: double your income.' },
+      { uid: 'peddler', name: 'Peddler', type: 'agent', cost: 2, power: 3, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'merchant-prince', name: 'Merchant Prince', type: 'agent', cost: 4, power: 6, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'errand-boy', name: 'Errand Boy', type: 'agent', cost: 1, power: 2, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'broker', name: 'Broker', type: 'agent', cost: 1, power: 1, ministry: 1, rarity: 'C', text: 'On play: gain 1 coin.' },
+      { uid: 'shopkeeper', name: 'Shopkeeper', type: 'agent', cost: 3, power: 5, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'moneylender', name: 'Moneylender', type: 'agent', cost: 5, power: 7, ministry: 1, rarity: 'C', text: 'On play: gain 3 coins.' },
+      { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 9, ministry: 1, rarity: 'C', text: '' },
+      { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 5, ministry: 1, rarity: 'U', text: 'On play: +1 income.' },
+      { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 2, ministry: 1, rarity: 'U', text: 'On play: draw a card.' },
+      { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 4, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
+      { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 7, ministry: 1, rarity: 'R', text: 'On play: +3 income.' },
       // Intrigue agents (11)
-      { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 6, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'spymaster', name: 'Spymaster', type: 'agent', cost: 4, power: 12, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'pickpocket', name: 'Pickpocket', type: 'agent', cost: 1, power: 3, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'lookout', name: 'Lookout', type: 'agent', cost: 1, power: 2, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
-      { uid: 'courier', name: 'Courier', type: 'agent', cost: 3, power: 9, ministry: 2, rarity: 'C', text: '' },
-      { uid: 'spy', name: 'Spy', type: 'agent', cost: 5, power: 13, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
-      { uid: 'mastermind', name: 'Mastermind', type: 'agent', cost: 6, power: 14, ministry: 2, rarity: 'C', text: 'On play: draw 2 cards.' },
-      { uid: 'double-agent', name: 'Double Agent', type: 'agent', cost: 3, power: 7, ministry: 2, rarity: 'U', text: "On play: look at the opponent's hand." },
-      { uid: 'blackmailer', name: 'Blackmailer', type: 'agent', cost: 4, power: 8, ministry: 2, rarity: 'U', text: 'On play: opponent discards a random card.' },
-      { uid: 'poisoner', name: 'Poisoner', type: 'agent', cost: 3, power: 6, ministry: 2, rarity: 'U', text: "On play: give an opponent's agent -3 power." },
-      { uid: 'grand-spymaster', name: 'Grand Spymaster', type: 'agent', cost: 6, power: 10, ministry: 2, rarity: 'R', text: "On play: gain control of an opponent's agent." },
+      { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 3, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'spymaster', name: 'Spymaster', type: 'agent', cost: 4, power: 6, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'pickpocket', name: 'Pickpocket', type: 'agent', cost: 1, power: 2, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'lookout', name: 'Lookout', type: 'agent', cost: 1, power: 1, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
+      { uid: 'courier', name: 'Courier', type: 'agent', cost: 3, power: 5, ministry: 2, rarity: 'C', text: '' },
+      { uid: 'spy', name: 'Spy', type: 'agent', cost: 5, power: 7, ministry: 2, rarity: 'C', text: 'On play: draw a card.' },
+      { uid: 'mastermind', name: 'Mastermind', type: 'agent', cost: 6, power: 8, ministry: 2, rarity: 'C', text: 'On play: draw 2 cards.' },
+      { uid: 'double-agent', name: 'Double Agent', type: 'agent', cost: 3, power: 4, ministry: 2, rarity: 'U', text: "On play: at the start of your next turn, after the draw phase, your opponent discards a random card." },
+      { uid: 'blackmailer', name: 'Blackmailer', type: 'agent', cost: 4, power: 5, ministry: 2, rarity: 'U', text: 'On play: at the start of your next turn, after the draw phase, your opponent discards a random card.' },
+      { uid: 'poisoner', name: 'Poisoner', type: 'agent', cost: 3, power: 4, ministry: 2, rarity: 'U', text: "On play: give an opponent's agent -3 power." },
+      { uid: 'grand-spymaster', name: 'Grand Spymaster', type: 'agent', cost: 6, power: 7, ministry: 2, rarity: 'R', text: "On play: gain control of an opponent's agent." },
       // Neutral agents (8)
-      { uid: 'villager', name: 'Villager', type: 'agent', cost: 1, power: 2, ministry: null, rarity: 'C', text: '' },
-      { uid: 'artisan', name: 'Artisan', type: 'agent', cost: 2, power: 4, ministry: null, rarity: 'C', text: '' },
-      { uid: 'scholar', name: 'Scholar', type: 'agent', cost: 3, power: 6, ministry: null, rarity: 'C', text: '' },
-      { uid: 'elder', name: 'Elder', type: 'agent', cost: 4, power: 9, ministry: null, rarity: 'C', text: '' },
-      { uid: 'master', name: 'Master', type: 'agent', cost: 5, power: 11, ministry: null, rarity: 'C', text: '' },
-      { uid: 'sage', name: 'Sage', type: 'agent', cost: 6, power: 14, ministry: null, rarity: 'C', text: '' },
-      { uid: 'diplomat', name: 'Diplomat', type: 'agent', cost: 3, power: 7, ministry: null, rarity: 'U', text: 'On play: gain 1 coin and draw a card.' },
-      { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 12, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
+      { uid: 'villager', name: 'Villager', type: 'agent', cost: 1, power: 1, ministry: null, rarity: 'C', text: '' },
+      { uid: 'artisan', name: 'Artisan', type: 'agent', cost: 2, power: 2, ministry: null, rarity: 'C', text: '' },
+      { uid: 'scholar', name: 'Scholar', type: 'agent', cost: 3, power: 3, ministry: null, rarity: 'C', text: '' },
+      { uid: 'elder', name: 'Elder', type: 'agent', cost: 4, power: 4, ministry: null, rarity: 'C', text: '' },
+      { uid: 'master', name: 'Master', type: 'agent', cost: 5, power: 5, ministry: null, rarity: 'C', text: '' },
+      { uid: 'sage', name: 'Sage', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'C', text: '' },
+      { uid: 'diplomat', name: 'Diplomat', type: 'agent', cost: 3, power: 2, ministry: null, rarity: 'U', text: 'On play: gain 1 coin and draw a card.' },
+      { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
       // Items (5)
-      { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 2 extra coins.' },
-      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 1 coin at the start of your next turn.' },
+      { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 1 extra coin for each agent in your Commerce.' },
+      { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 1 coin for each agent in your Military at the start of your next turn.' },
       { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
-      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income.' },
-      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: gain coins equal to your income.' },
+      { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income if you have an agent in Commerce.' },
+      { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: return an agent to your hand, gain its cost in coins.' },
       // Equips (8)
       { uid: 'iron-arms', name: 'Iron Bracers', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
       { uid: 'concealed-blade', name: 'Concealed Blade', type: 'equip', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-      { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-      { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +8 power.', attachPower: 8 },
-      { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +2 power.', attachPower: 2, coinOnAttach: 3 },
-      { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +3 power.', attachPower: 3, drawOnAttach: 1 },
-      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +6 power and counts as 2 agents for ministry bonuses.', attachPower: 6, countsAsTwo: true }
+      { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +3 power.', attachPower: 3 },
+      { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +4 power. The tax amount is +1.', attachPower: 4 },
+      { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +1 power.', attachPower: 1, coinOnAttach: 3 },
+      { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +4 power.', attachPower: 4, drawOnAttach: 1 },
+      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is equipped, players cannot play agents on the equipped agent\'s ministry.', attachPower: 3 }
     ];
     var cardDef = {};
     SET1.forEach(function (t) { cardDef[t.uid] = t; });
@@ -834,7 +835,8 @@
     var DECK_SIZE = 15;
 
     var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
-    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard;
+    var playerBase, oppBase;
+    var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
 
@@ -918,9 +920,12 @@
     function ministryPower(board, m) {
       var t = 0;
       var agents = board[m];
+      var prov = 0;
+      if (m === 0) agents.forEach(function (x) { if (x.uid === 'quartermaster') prov += 1; });
       agents.forEach(function (c) {
         var p = agentPower(c);
         if (c.uid === 'veteran-sergeant') p += 2 * (agents.length - 1);
+        if (m === 0) p += 2 * (prov - (c.uid === 'quartermaster' ? 1 : 0));
         t += p;
       });
       return t;
@@ -942,8 +947,25 @@
       board[0].forEach(function (c) {
         if (c.uid === 'tax-collector') n += 1;
         if (c.uid === 'grand-marshal') n += 2;
+        (c.equips || []).forEach(function (e) { if (e.uid === 'tiger-armor') n += 1; });
       });
       return n;
+    }
+
+    function syncIncome() {
+      playerIncome = playerBase + (hasBonus(playerBoard, 1) ? 1 : 0);
+      oppIncome = oppBase + (hasBonus(oppBoard, 1) ? 1 : 0);
+    }
+
+    function ministryLocked(m) {
+      var boards = [playerBoard, oppBoard];
+      for (var b = 0; b < boards.length; b++) {
+        for (var i = 0; i < boards[b][m].length; i++) {
+          var eqs = boards[b][m][i].equips || [];
+          for (var j = 0; j < eqs.length; j++) if (eqs[j].uid === 'dragon-regalia') return true;
+        }
+      }
+      return false;
     }
 
     function sellValue() {
@@ -1098,6 +1120,7 @@
           if (q === 1 && !playerBoard[m][q]) pslot.appendChild(slotHint(m));
           if (playerBoard[m][q]) {
             var pc = cardEl(playerBoard[m][q], 'face-up');
+            if (pendingTarget && pendingTarget.kind === 'return') pc.classList.add('targetable');
             pc.querySelector('.power').textContent = agentPower(playerBoard[m][q]);
             pslot.appendChild(pc);
             var eqs = playerBoard[m][q].equips || [];
@@ -1162,16 +1185,34 @@
     }
 
     var ITEM_FX = {
-      'coin-pouch': function () { playerCoins += 2; toast('Coin Pouch: +2 coins'); },
-      'smoke-bomb': function () { pendingSmoke += 1; toast('Smoke Bomb: opponent loses 1 coin next turn'); },
+      'coin-pouch': function () {
+        var n = playerBoard[1].length;
+        playerCoins += n;
+        toast(n > 0 ? 'Coin Pouch: +' + n + ' coins' : 'Coin Pouch: no Commerce agents');
+      },
+      'smoke-bomb': function () { pendingSmoke = 1; toast('Smoke Bomb: opponent loses coins next turn'); },
       'sealed-letter': function () { draw(playerDeck, playerHand); toast('Sealed Letter: drew a card'); },
-      'abacus': function () { playerIncome += 1; toast('Abacus: +1 income'); },
-      'dragon-pearl': function () { playerCoins += playerIncome; toast('Dragon Pearl: +' + playerIncome + ' coins'); }
+      'abacus': function () {
+        if (playerBoard[1].length > 0) { playerBase += 1; syncIncome(); toast('Abacus: +1 income'); }
+        else toast('Abacus: needs a Commerce agent');
+      },
+      'dragon-pearl': function () {
+        if (!playerHasAgents()) { toast('Dragon Pearl: no agents to return'); return; }
+        pendingTarget = { kind: 'return' };
+        toast('Dragon Pearl: tap one of your agents to return it');
+      }
     };
 
     function oppHasAgents() {
       for (var m = 0; m < MINISTRIES.length; m++) {
         if (oppBoard[m].length > 0) return true;
+      }
+      return false;
+    }
+
+    function playerHasAgents() {
+      for (var m = 0; m < MINISTRIES.length; m++) {
+        if (playerBoard[m].length > 0) return true;
       }
       return false;
     }
@@ -1191,24 +1232,13 @@
         case 'spy': draw(playerDeck, playerHand); toast('Drew a card'); break;
         case 'mastermind': draw(playerDeck, playerHand); draw(playerDeck, playerHand); toast('Drew 2 cards'); break;
         case 'diplomat': playerCoins += 1; draw(playerDeck, playerHand); toast('Diplomat: +1 coin, drew a card'); break;
-        case 'treasurer': playerIncome += 1; toast('Treasurer: +1 income'); break;
-        case 'smuggler':
-          draw(playerDeck, playerHand);
-          if (playerHand.length > 0) {
-            pendingDiscard = true;
-            toast('Smuggler: tap a card in hand to discard');
-          }
-          break;
+        case 'treasurer': playerBase += 1; syncIncome(); toast('Treasurer: +1 income'); break;
+        case 'grand-treasurer': playerBase += 3; syncIncome(); toast('Grand Treasurer: +3 income'); break;
+        case 'smuggler': draw(playerDeck, playerHand); toast('Smuggler: drew a card'); break;
         case 'raider': pendingTax += 1; toast('Raider: opponent loses 1 coin next turn'); break;
         case 'sentry': pendingTax += 1; toast('Sentry: opponent loses 1 coin next turn'); break;
-        case 'quartermaster': pendingTax += 2; toast('Quartermaster: opponent loses 2 coins next turn'); break;
-        case 'double-agent': showReveal(); break;
-        case 'blackmailer':
-          if (oppHand.length > 0) {
-            oppHand.splice(Math.floor(Math.random() * oppHand.length), 1);
-            toast('Blackmailer: opponent discards a card');
-          }
-          break;
+        case 'double-agent': pendingPostDraw += 1; toast('Double Agent: opponent discards next turn'); break;
+        case 'blackmailer': pendingPostDraw += 1; toast('Blackmailer: opponent discards next turn'); break;
         case 'poisoner':
           if (oppHasAgents()) {
             pendingTarget = { kind: 'weaken' };
@@ -1235,11 +1265,29 @@
           toast('Your ' + MINISTRIES[m].name + ' is full');
           return false;
         }
+        var oppHadCommerce = hasBonus(oppBoard, 1);
         oppBoard[m].splice(idx, 1);
         playerBoard[m].push(target);
         toast('Agent stolen!');
-        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); if (m === 1) playerIncome += 1; }
+        if (playerBoard[m].length === 2) { toast(BONUS_MSG[m]); }
+        syncIncome();
+        if (oppHadCommerce && !hasBonus(oppBoard, 1)) toast('Opponent Commerce bonus lost');
       }
+      return true;
+    }
+
+    function applyReturn(m, idx) {
+      var target = playerBoard[m][idx];
+      if (!target) return false;
+      var hadCommerce = hasBonus(playerBoard, 1);
+      playerBoard[m].splice(idx, 1);
+      target.equips = [];
+      target.powerDelta = 0;
+      playerHand.push(target);
+      playerCoins += target.cost;
+      syncIncome();
+      if (hadCommerce && !hasBonus(playerBoard, 1)) toast('Commerce bonus lost');
+      toast('Returned ' + target.name + ' to hand: +' + target.cost + ' coins');
       return true;
     }
 
@@ -1341,26 +1389,27 @@
     }
 
     function startTurn() {
-      // income phase: income +1, coins refill to income (no carryover)
-      playerIncome += 1;
+      // income phase: base income +1, then effective income (base + Commerce bonus); coins refill (no carryover)
+      playerBase += 1;
+      oppBase += 1;
+      syncIncome();
       playerCoins = playerIncome;
-      oppIncome += 1;
       oppCoins = oppIncome;
-      // delayed taxes from Sentry / Provisioner
+      // delayed taxes from Sentry / Raider
       if (pendingTax > 0) {
         var pt = Math.min(pendingTax, oppCoins);
         oppCoins -= pt;
         if (pt > 0) toast('Delayed tax: opponent loses ' + pt + ' coin' + (pt > 1 ? 's' : ''));
         pendingTax = 0;
       }
-      // delayed smoke bomb
+      // delayed smoke bomb: -1 coin per your Military agent, counted now (trigger time)
       if (pendingSmoke > 0) {
-        var ps = Math.min(pendingSmoke, oppCoins);
+        var ps = Math.min(playerBoard[0].length, oppCoins);
         oppCoins -= ps;
         if (ps > 0) toast('Smoke Bomb: opponent loses ' + ps + ' coin' + (ps > 1 ? 's' : ''));
         pendingSmoke = 0;
       }
-      // tax: each militia bonus adds +1; lesser militia power pays
+      // tax: each military bonus adds +1; lesser military power pays
       var tax = (hasBonus(playerBoard, 0) ? 1 : 0) + (hasBonus(oppBoard, 0) ? 1 : 0) +
         taxModifier(playerBoard) + taxModifier(oppBoard);
       if (tax > 0) {
@@ -1381,6 +1430,15 @@
       var od = 1 + (hasBonus(oppBoard, 2) ? 1 : 0);
       for (var i = 0; i < pd; i++) draw(playerDeck, playerHand);
       for (var j = 0; j < od; j++) draw(oppDeck, oppHand);
+      // post-draw delayed discards (Double Agent / Blackmailer)
+      if (pendingPostDraw > 0) {
+        var dc = 0;
+        for (var k = 0; k < pendingPostDraw; k++) {
+          if (oppHand.length > 0) { oppHand.splice(Math.floor(Math.random() * oppHand.length), 1); dc += 1; }
+        }
+        if (dc > 0) toast('Opponent discards ' + dc + ' card' + (dc > 1 ? 's' : ''));
+        pendingPostDraw = 0;
+      }
     }
 
     function showScreen(name) {
@@ -1420,7 +1478,7 @@
 
     var FILTERS = [
       { id: 'all', label: 'All' },
-      { id: 'militia', label: 'Militia' },
+      { id: 'militia', label: 'Military' },
       { id: 'commerce', label: 'Commerce' },
       { id: 'intrigue', label: 'Intrigue' },
       { id: 'neutral', label: 'Neutral' },
@@ -1630,15 +1688,19 @@
       });
     });
 
-    function newGame() {
+    var randomMode = false;
+
+    function newGame(useRandom) {
+      if (useRandom !== undefined) randomMode = useRandom;
       turn = 1;
       gameOver = false;
+      playerBase = 1; oppBase = 1;
       playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
       oppIncome = 1; oppCoins = 1;
-      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false;
+      pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0;
       discardUsed = false;
-      playerDeck = buildDeck(deckList); playerHand = [];
-      oppDeck = buildDeck(AI_DECK); oppHand = [];
+      playerDeck = buildDeck(randomMode ? openThreePacks() : deckList); playerHand = [];
+      oppDeck = buildDeck(randomMode ? openThreePacks() : AI_DECK); oppHand = [];
       playerBoard = [[], [], []];
       oppBoard = [[], [], []];
       for (var i = 0; i < STARTING_HAND; i++) {
@@ -1647,12 +1709,14 @@
       }
       document.getElementById('result-banner').classList.add('hidden');
       render();
+      if (randomMode) toast('Random game: decks built from 3 packs each');
     }
 
     function validColumns(board, card) {
       var cols = [];
       for (var m = 0; m < MINISTRIES.length; m++) {
         if (board[m].length >= MAX_PER_MINISTRY) continue;
+        if (ministryLocked(m)) continue;
         if (card.ministry !== null && card.ministry !== undefined && card.ministry !== m) continue;
         cols.push(m);
       }
@@ -1662,7 +1726,7 @@
     function opponentPlay() {
       while (true) {
         var affordable = oppHand
-          .filter(function (c) { return c.cost <= oppCoins && validColumns(oppBoard, c).length > 0; })
+          .filter(function (c) { return c.type === 'agent' && c.cost <= oppCoins && validColumns(oppBoard, c).length > 0; })
           .sort(function (a, b) { return (b.cost - a.cost) || (b.power - a.power); });
         if (affordable.length === 0) break;
         var card = affordable[0];
@@ -1671,7 +1735,6 @@
         oppCoins -= card.cost;
         var om = open[Math.floor(Math.random() * open.length)];
         oppBoard[om].push(card);
-        if (oppBoard[om].length === 2 && om === 1) oppIncome += 1;
       }
     }
 
@@ -1775,6 +1838,22 @@
       if (gameOver) return;
       if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
       if (pendingTarget) {
+        if (pendingTarget.kind === 'return') {
+          var rt = e.target.closest ? e.target.closest('.column .slot .card.face-up') : null;
+          if (rt && rt.classList.contains('targetable')) {
+            var rcol = rt.closest('.column');
+            var rm = parseInt(rcol.dataset.ministry, 10);
+            var rslot = rt.closest('.slot');
+            var ridx = parseInt(rslot.dataset.slotIndex, 10);
+            if (applyReturn(rm, ridx)) pendingTarget = null;
+          } else {
+            pendingTarget = null;
+            toast('Targeting cancelled');
+          }
+          render();
+          e.preventDefault();
+          return;
+        }
         var ot = e.target.closest ? e.target.closest('.column .slot .card.opp') : null;
         if (ot && ot.classList.contains('targetable')) {
           var tcol = ot.closest('.column');
@@ -1851,6 +1930,7 @@
         var m = parseInt(col.dataset.ministry, 10);
         var ok = drag.card.cost <= playerCoins &&
           playerBoard[m].length < MAX_PER_MINISTRY &&
+          !ministryLocked(m) &&
           (drag.card.ministry === null || drag.card.ministry === undefined || drag.card.ministry === m);
         col.classList.add(ok ? 'drop-ok' : 'drop-full');
         drag.target = ok ? { type: 'ministry', m: m } : null;
@@ -1886,8 +1966,9 @@
           playerHand.splice(drag.index, 1);
           playerCoins -= drag.card.cost;
           playerBoard[pm].push(drag.card);
-          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); if (pm === 1) playerIncome += 1; }
+          if (playerBoard[pm].length === 2) { toast(BONUS_MSG[pm]); }
           onPlay(drag.card);
+          syncIncome();
         }
       }
       drag.ghost.remove();
@@ -1912,6 +1993,7 @@
       pendingTarget = null;
       pendingDiscard = false;
       opponentPlay();
+      syncIncome();
       if (turn >= MAX_TURNS) {
         gameOver = true;
         render();
@@ -1936,7 +2018,11 @@
         return;
       }
       showScreen('game');
-      newGame();
+      newGame(false);
+    });
+    document.getElementById('random-btn').addEventListener('click', function () {
+      showScreen('game');
+      newGame(true);
     });
     document.getElementById('deck-btn').addEventListener('click', function () {
       renderDeckBuilder();
@@ -1984,13 +2070,26 @@
       document.getElementById('pack-stage-open').classList.add('hidden');
     }
 
+    function openPack() {
+      var cards = [];
+      for (var i = 0; i < 3; i++) cards.push(randomOfRarity('C'));
+      cards.push(randomOfRarity('U'));
+      cards.push(Math.random() < 0.15 ? randomOfRarity('R') : randomOfRarity('U'));
+      return cards;
+    }
+
+    function openThreePacks() {
+      var uids = [];
+      for (var p = 0; p < 3; p++) {
+        openPack().forEach(function (t) { uids.push(t.uid); });
+      }
+      return uids;
+    }
+
     function tearOpenPack() {
       var packEl = document.getElementById('pack');
       if (packEl.classList.contains('opening')) return;
-      packCards = [];
-      for (var i = 0; i < 3; i++) packCards.push(randomOfRarity('C'));
-      packCards.push(randomOfRarity('U'));
-      packCards.push(Math.random() < 0.15 ? randomOfRarity('R') : randomOfRarity('U'));
+      packCards = openPack();
       for (var j = packCards.length - 1; j > 0; j--) {
         var k = Math.floor(Math.random() * (j + 1));
         var tmp = packCards[j]; packCards[j] = packCards[k]; packCards[k] = tmp;
