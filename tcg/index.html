@@ -415,7 +415,9 @@
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   }
-  .hand .card .ctype, .slot .card .ctype, .card.drag-ghost .ctype { display: none; }
+  .hand .card .ctype, .slot .card .ctype, .card.drag-ghost .ctype,
+  #discard-modal-grid .card .ctype,
+  #discard-slot.has-card .card .ctype, #opp-discard-slot.has-card .card .ctype { display: none; }
   .slot .card .ctext, .slot .card .textbar { display: none; }
   /* long-press zoom modal */
   #zoom-modal {
@@ -441,9 +443,9 @@
   #discard-modal-card h3 { font-size: 1.2rem; text-align: center; margin-bottom: 0.4rem; }
   #discard-modal-grid {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-    overflow-y: auto; padding: 0.5rem 0; min-height: 60px;
+    overflow-y: auto; padding: 0.5rem 10px; min-height: 60px;
   }
-  #discard-modal-grid .card { width: 68px; height: 95px; }
+  #discard-modal-grid .card.face-up { cursor: default; }
   #discard-modal-close {
     font-size: 1rem; font-weight: 700;
     padding: 0.6rem 1.5rem; margin: 0.5rem auto 0;
@@ -469,13 +471,19 @@
   #zoom-card .card.zoom .tcoin + .tcoin { margin-top: -10px; }
   #zoom-card .card.zoom .power { width: 50px; height: 50px; font-size: 22px; bottom: -10px; right: -10px; }
   /* hand cards (large) */
-  .hand .card, .deck-grid .card { width: 56px; height: 78px; font-size: 9px; padding: 3px; }
+  .hand .card, .deck-grid .card, #discard-modal-grid .card { width: 56px; height: 78px; font-size: 9px; padding: 3px; }
   .hand .card, .slot .card, .card.big, .card.drag-ghost, #zoom-card .card.zoom { overflow: visible; }
-  .hand .card .cname, .deck-grid .card .cname { font-size: 6.5px; }
-  .hand .card .tcoin, .deck-grid .card .tcoin { width: 13px; height: 13px; }
-  .hand .card .tcoin + .tcoin, .deck-grid .card .tcoin + .tcoin { margin-top: -4px; }
-  .hand .card .power, .deck-grid .card .power { width: 17px; height: 17px; font-size: 10px; }
-  .hand .card .ctext, .deck-grid .card .ctext {
+  .hand .card .cname, .deck-grid .card .cname, #discard-modal-grid .card .cname,
+  #discard-slot.has-card .card .cname, #opp-discard-slot.has-card .card .cname { font-size: 6.5px; }
+  .hand .card .tcoin, .deck-grid .card .tcoin, #discard-modal-grid .card .tcoin,
+  #discard-slot.has-card .card .tcoin, #opp-discard-slot.has-card .card .tcoin { width: 13px; height: 13px; }
+  .hand .card .tcoin + .tcoin, .deck-grid .card .tcoin + .tcoin,
+  #discard-modal-grid .card .tcoin + .tcoin,
+  #discard-slot.has-card .card .tcoin + .tcoin, #opp-discard-slot.has-card .card .tcoin + .tcoin { margin-top: -4px; }
+  .hand .card .power, .deck-grid .card .power, #discard-modal-grid .card .power,
+  #discard-slot.has-card .card .power, #opp-discard-slot.has-card .card .power { width: 17px; height: 17px; font-size: 10px; }
+  .hand .card .ctext, .deck-grid .card .ctext, #discard-modal-grid .card .ctext,
+  #discard-slot.has-card .card .ctext, #opp-discard-slot.has-card .card .ctext {
     font-size: 5.5px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
@@ -606,6 +614,7 @@
     position: absolute; inset: 0;
     pointer-events: none;
     filter: grayscale(1); opacity: 0.75;
+    font-size: 9px; padding: 3px;
   }
   .discard-overlay {
     position: absolute; left: 0; right: 0; bottom: 0;
@@ -700,9 +709,9 @@
     <div id="board"></div>
     <div id="side-panel">
       <p id="turn-counter">Turn 1 of 6</p>
+      <div id="opp-discard-slot"><span>opponent discard</span></div>
       <button id="end-turn" type="button">Submit Turn</button>
       <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
-      <div id="opp-discard-slot"><span>opponent discard</span></div>
     </div>
   </section>
 
