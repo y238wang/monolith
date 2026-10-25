@@ -882,7 +882,7 @@
       { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +4 power. The tax amount is +1.', attachPower: 4 },
       { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +1 power.', attachPower: 1, coinOnAttach: 3 },
       { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +4 power.', attachPower: 4, drawOnAttach: 1 },
-      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is equipped, players cannot play agents on the equipped agent\'s ministry.', attachPower: 3 }
+      { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is equipped, players cannot play agents on the equipped agent\'s ministry (starting next turn).', attachPower: 3 }
     ];
     var cardDef = {};
     SET1.forEach(function (t) { cardDef[t.uid] = t; });
@@ -1019,11 +1019,16 @@
     }
 
     function ministryLocked(m) {
+      // the lock only bites from the turn AFTER the Regalia was equipped:
+      // turns are simultaneous, so the opponent still gets to play into the
+      // ministry during the turn the Regalia hits the board
       var boards = [playerBoard, oppBoard];
       for (var b = 0; b < boards.length; b++) {
         for (var i = 0; i < boards[b][m].length; i++) {
           var eqs = boards[b][m][i].equips || [];
-          for (var j = 0; j < eqs.length; j++) if (eqs[j].uid === 'dragon-regalia') return true;
+          for (var j = 0; j < eqs.length; j++) {
+            if (eqs[j].uid === 'dragon-regalia' && (eqs[j]._lockedFrom === undefined || eqs[j]._lockedFrom < turn)) return true;
+          }
         }
       }
       return false;
@@ -1986,6 +1991,7 @@
         oppHand.splice(oppHand.indexOf(eq), 1);
         oppCoins -= eq.cost;
         tgt.equips.push(eq);
+        if (eq.uid === 'dragon-regalia') eq._lockedFrom = turn;
         if (eq.coinOnAttach) oppCoins += eq.coinOnAttach;
         if (eq.drawOnAttach) draw(oppDeck, oppHand);
       }
@@ -2207,6 +2213,7 @@
           playerCoins -= drag.card.cost;
           var ag = playerBoard[drag.target.m][drag.target.idx];
           ag.equips.push(drag.card);
+          if (drag.card.uid === 'dragon-regalia') drag.card._lockedFrom = turn;
           if (drag.card.coinOnAttach) {
             playerCoins += drag.card.coinOnAttach;
             toast('+' + drag.card.coinOnAttach + ' coins');
