@@ -425,6 +425,31 @@
     touch-action: none;
   }
   #zoom-modal.hidden { display: none; }
+  #discard-modal {
+    position: fixed; inset: 0; z-index: 2500;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+  }
+  #discard-modal.hidden { display: none; }
+  #discard-modal-card {
+    background: rgba(250, 247, 238, 0.97);
+    border: 2px solid #1c1915; border-radius: 12px;
+    padding: 1rem; width: 100%; max-width: 340px; max-height: 80vh;
+    display: flex; flex-direction: column; color: #1c1915;
+  }
+  #discard-modal-card h3 { font-size: 1.2rem; text-align: center; margin-bottom: 0.4rem; }
+  #discard-modal-grid {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    overflow-y: auto; padding: 0.5rem 0; min-height: 60px;
+  }
+  #discard-modal-grid .card { width: 68px; height: 95px; }
+  #discard-modal-close {
+    font-size: 1rem; font-weight: 700;
+    padding: 0.6rem 1.5rem; margin: 0.5rem auto 0;
+    border: 1px solid #1c1915; border-radius: 999px;
+    background: rgba(250, 247, 238, 0.9); color: #1c1915; cursor: pointer;
+  }
   #zoom-card .card.zoom {
     width: 280px; height: 392px;
     padding: 8px; border-radius: 14px;
@@ -555,7 +580,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #new-game:active { transform: scale(0.97); }
-  #discard-slot {
+  #discard-slot, #opp-discard-slot {
     width: 64px;
     aspect-ratio: 5 / 7;
     border: 2px dashed rgba(28, 25, 21, 0.5);
@@ -572,10 +597,25 @@
     margin-top: 0.5rem;
     touch-action: none;
   }
-  #discard-slot b { color: #b8860b; font-size: 0.8rem; }
+  #discard-slot b, #opp-discard-slot b { color: #b8860b; font-size: 0.8rem; }
   .discard-reward { display: flex; align-items: center; gap: 4px; }
   #discard-slot.drop-ok { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.12); }
   #discard-slot.used { opacity: 0.3; }
+  #discard-slot.has-card, #opp-discard-slot.has-card { position: relative; border-style: solid; }
+  #discard-slot.has-card .card, #opp-discard-slot.has-card .card {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    filter: grayscale(1); opacity: 0.75;
+  }
+  .discard-overlay {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 3px 2px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+    color: #faf7ee; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+  .discard-overlay b { color: #d4a017; font-size: 0.8rem; }
   /* ---- income panel: income number + vertical coin stacks (5 per column) ---- */
   #income-panel {
     width: 52px; flex: 0 0 auto;
@@ -662,6 +702,7 @@
       <p id="turn-counter">Turn 1 of 6</p>
       <button id="end-turn" type="button">Submit Turn</button>
       <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
+      <div id="opp-discard-slot"><span>opponent discard</span></div>
     </div>
   </section>
 
@@ -743,6 +784,14 @@
 
   <div id="zoom-modal" class="hidden">
     <div id="zoom-card"></div>
+  </div>
+
+  <div id="discard-modal" class="hidden">
+    <div id="discard-modal-card">
+      <h3 id="discard-modal-title"></h3>
+      <div id="discard-modal-grid"></div>
+      <button id="discard-modal-close" type="button">Close</button>
+    </div>
   </div>
 
   <div id="toast" class="hidden"></div>
@@ -838,6 +887,7 @@
     var turn, gameOver, playerIncome, playerCoins, oppIncome, oppCoins, discardUsed;
     var playerBase, oppBase;
     var pendingTax, pendingSmoke, pendingTarget, pendingDiscard, pendingPostDraw, pendingOppPostDraw, pendingTaxOpp;
+    var playerDiscards = [], oppDiscards = [];
     var revealing = false;
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
@@ -1183,7 +1233,95 @@
       document.getElementById('player-deck-count').textContent = 'deck: ' + playerDeck.length;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + oppDeck.length;
       document.getElementById('discard-slot').classList.toggle('used', discardUsed);
+      renderDiscardSlots();
       document.getElementById('sell-num').textContent = '+' + sellValue();
+    }
+
+    function renderOneSlot(id, pile, withCoin) {
+      var slot = document.getElementById(id);
+      var top = pile.length > 0 ? pile[pile.length - 1] : null;
+      slot.classList.toggle('has-card', !!top);
+      if (!top) {
+        slot.innerHTML = id === 'discard-slot'
+          ? '<span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span>'
+          : '<span>opponent discard</span>';
+        return;
+      }
+      var c = cardEl(top, 'face-up');
+      var ov = document.createElement('div');
+      ov.className = 'discard-overlay';
+      var label = document.createElement('span');
+      label.textContent = id === 'discard-slot' ? 'discard' : 'opponent';
+      ov.appendChild(label);
+      if (withCoin) {
+        var rw = document.createElement('span');
+        rw.className = 'discard-reward';
+        var coin = document.createElement('span');
+        coin.className = 'coin';
+        var b = document.createElement('b');
+        b.id = 'sell-num';
+        b.textContent = '+' + sellValue();
+        rw.appendChild(coin); rw.appendChild(b);
+        ov.appendChild(rw);
+      }
+      slot.innerHTML = '';
+      slot.appendChild(c);
+      slot.appendChild(ov);
+    }
+
+    function renderDiscardSlots() {
+      renderOneSlot('discard-slot', playerDiscards, true);
+      renderOneSlot('opp-discard-slot', oppDiscards, false);
+    }
+
+    function openDiscardModal(side) {
+      var pile = side === 'opp' ? oppDiscards : playerDiscards;
+      document.getElementById('discard-modal-title').textContent =
+        side === 'opp' ? "Opponent's discards" : 'Your discards';
+      var grid = document.getElementById('discard-modal-grid');
+      grid.innerHTML = '';
+      if (pile.length === 0) {
+        var em = document.createElement('p');
+        em.textContent = 'No cards discarded yet.';
+        grid.appendChild(em);
+      } else {
+        for (var i = pile.length - 1; i >= 0; i--) grid.appendChild(cardEl(pile[i], 'face-up'));
+      }
+      document.getElementById('discard-modal').classList.remove('hidden');
+    }
+
+    function closeDiscardModal() {
+      document.getElementById('discard-modal').classList.add('hidden');
+    }
+
+    function bindDiscardSlot(id, side) {
+      var slot = document.getElementById(id);
+      var timer = null, startX = 0, startY = 0, longFired = false, tracking = false;
+      slot.addEventListener('pointerdown', function (e) {
+        if (zoomOpen) return; // let the existing handler close the zoom
+        e.stopPropagation();
+        tracking = true; longFired = false;
+        startX = e.clientX; startY = e.clientY;
+        var pile = side === 'opp' ? oppDiscards : playerDiscards;
+        if (pile.length === 0) return;
+        var top = pile[pile.length - 1];
+        timer = setTimeout(function () { longFired = true; showZoom(top); }, 500);
+      });
+      function cancel() {
+        if (timer) { clearTimeout(timer); timer = null; }
+        tracking = false;
+      }
+      slot.addEventListener('pointermove', function (e) {
+        if (!tracking) return;
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) > 12) cancel();
+      });
+      slot.addEventListener('pointerup', function () {
+        if (!tracking) return;
+        var wasLong = longFired;
+        cancel();
+        if (!wasLong) openDiscardModal(side);
+      });
+      slot.addEventListener('pointercancel', cancel);
     }
 
     var ITEM_FX = {
@@ -1446,7 +1584,7 @@
       if (pendingPostDraw > 0) {
         var dc = 0;
         for (var k = 0; k < pendingPostDraw; k++) {
-          if (oppHand.length > 0) { oppHand.splice(Math.floor(Math.random() * oppHand.length), 1); dc += 1; }
+          if (oppHand.length > 0) { oppDiscards.push(oppHand.splice(Math.floor(Math.random() * oppHand.length), 1)[0]); dc += 1; }
         }
         if (dc > 0) toast('Opponent discards ' + dc + ' card' + (dc > 1 ? 's' : ''));
         pendingPostDraw = 0;
@@ -1455,7 +1593,7 @@
       if (pendingOppPostDraw > 0) {
         var pdc = 0;
         for (var k = 0; k < pendingOppPostDraw; k++) {
-          if (playerHand.length > 0) { playerHand.splice(Math.floor(Math.random() * playerHand.length), 1); pdc += 1; }
+          if (playerHand.length > 0) { playerDiscards.push(playerHand.splice(Math.floor(Math.random() * playerHand.length), 1)[0]); pdc += 1; }
         }
         if (pdc > 0) toast('You discard ' + pdc + ' card' + (pdc > 1 ? 's' : ''));
         pendingOppPostDraw = 0;
@@ -1719,6 +1857,7 @@
       playerIncome = 1; playerCoins = 1; // turn 1: no income phase yet
       oppIncome = 1; oppCoins = 1;
       pendingTax = 0; pendingSmoke = 0; pendingTarget = null; pendingDiscard = false; pendingPostDraw = 0; pendingOppPostDraw = 0; pendingTaxOpp = 0;
+      playerDiscards = []; oppDiscards = [];
       discardUsed = false;
       revealing = false;
       document.getElementById('end-turn').disabled = false;
@@ -2050,6 +2189,7 @@
       if (commit && drag.target) {
         if (drag.target.type === 'discard') {
           playerHand.splice(drag.index, 1);
+          playerDiscards.push(drag.card);
           playerCoins += sellValue();
           if (drag.card.type === 'item' && ITEM_FX[drag.card.uid]) ITEM_FX[drag.card.uid]();
           discardUsed = true;
@@ -2138,6 +2278,12 @@
     document.getElementById('random-btn').addEventListener('click', function () {
       showScreen('game');
       newGame(true);
+    });
+    bindDiscardSlot('discard-slot', 'you');
+    bindDiscardSlot('opp-discard-slot', 'opp');
+    document.getElementById('discard-modal-close').addEventListener('click', closeDiscardModal);
+    document.getElementById('discard-modal').addEventListener('click', function (e) {
+      if (e.target === this) closeDiscardModal();
     });
     document.getElementById('deck-btn').addEventListener('click', function () {
       renderDeckBuilder();
