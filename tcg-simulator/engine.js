@@ -178,6 +178,14 @@
     return n;
   }
 
+  // Current tax level from two boards: each Military bonus +1, plus tax
+  // modifiers from both boards. Same value the round-start tax phase
+  // charges, so the page indicator and the engine can never drift apart.
+  function taxLevel(boardA, boardB) {
+    return (hasBonus(boardA, 0) ? 1 : 0) + (hasBonus(boardB, 0) ? 1 : 0) +
+      taxModifier(boardA) + taxModifier(boardB);
+  }
+
   function sameAction(a, b) {
     if (a.kind !== b.kind || a.handIndex !== b.handIndex ||
         a.ministry !== b.ministry || a.slot !== b.slot) return false;
@@ -486,20 +494,19 @@
           if (ps > 0) evts.push({ type: 'smokeHit', victim: 1 - s, amount: ps });
         }
       }
-      // tax phase: each Military bonus +1, plus tax modifiers; the side with
-      // the weaker Military pays the stronger side (floor 0, tie pays nothing)
-      var tax = (hasBonus(players[0].board, 0) ? 1 : 0) + (hasBonus(players[1].board, 0) ? 1 : 0) +
-        taxModifier(players[0].board) + taxModifier(players[1].board);
+      // tax phase: the side with the weaker Military loses `tax` coins
+      // (denial-only: the stronger side gains nothing). Tie loses nothing.
+      var tax = taxLevel(players[0].board, players[1].board);
       if (tax > 0) {
         var yp = ministryPower(players[0].board, 0);
         var op = ministryPower(players[1].board, 0);
         if (yp > op) {
           var t1 = Math.min(tax, players[1].coins);
-          players[1].coins -= t1; players[0].coins += t1;
+          players[1].coins -= t1;
           if (t1 > 0) evts.push({ type: 'tax', payer: 1, amount: t1 });
         } else if (op > yp) {
           var t2 = Math.min(tax, players[0].coins);
-          players[0].coins -= t2; players[1].coins += t2;
+          players[0].coins -= t2;
           if (t2 > 0) evts.push({ type: 'tax', payer: 0, amount: t2 });
         }
       }
@@ -870,7 +877,7 @@
     SET1: SET1, cardDef: cardDef,
     MINISTRIES: MINISTRIES, MAX_TURNS: MAX_TURNS, MAX_PER_MINISTRY: MAX_PER_MINISTRY,
     createGame: createGame, greedyPolicy: greedyPolicy,
-    agentPower: agentPower, ministryPower: ministryPower
+    agentPower: agentPower, ministryPower: ministryPower, taxLevel: taxLevel
   };
   root.TCGEngine = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

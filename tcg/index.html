@@ -340,6 +340,8 @@
   .col-head .tally { display: block; font-size: 0.8rem; margin-top: 2px; text-transform: none; letter-spacing: 0; }
   .col-head .tally b.you { color: #2e7d32; }
   .col-head .tally b.opp { color: #b03a2e; }
+  .col-head .tax-badge { display: block; font-size: 0.75rem; margin-top: 2px; text-transform: none; letter-spacing: 0; font-weight: 700; color: #a32e22; }
+  .col-head .tax-badge.zero { opacity: 0.45; font-weight: 400; color: inherit; }
 
   /* ---- cards (full-art: metal rarity frame, coin-stack cost, red-orb power) ---- */
   .card {
@@ -1014,6 +1016,13 @@
         tally.appendChild(document.createTextNode(' \u2013 '));
         tally.appendChild(ob);
         head.appendChild(tally);
+        if (m === 0) {
+          var tax = TCGEngine.taxLevel(V.me.board, V.opp.board);
+          var badge = document.createElement('span');
+          badge.className = 'tax-badge' + (tax === 0 ? ' zero' : '');
+          badge.textContent = 'Tax ' + tax;
+          head.appendChild(badge);
+        }
         col.appendChild(head);
 
         var playerSlots = document.createElement('div');
@@ -1261,8 +1270,8 @@
             break;
           case 'tax':
             toast(e.payer === 1
-              ? 'Tax: opponent pays you ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
-              : 'Tax: you pay opponent ' + e.amount + ' coin' + (e.amount > 1 ? 's' : ''));
+              ? 'Tax: opponent loses ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
+              : 'Tax: you lose ' + e.amount + ' coin' + (e.amount > 1 ? 's' : ''));
             break;
           case 'forcedDiscard':
             toast(e.victim === 1
