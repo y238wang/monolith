@@ -20,11 +20,169 @@
     flex-direction: column;
     padding: 24px 16px;
   }
-  h1 {
+  .view {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .view[hidden] {
+    display: none;
+  }
+  .topbar {
     flex-shrink: 0;
-    text-align: center;
-    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 28px;
+  }
+  .topbar h1 {
+    flex: 1;
+    text-align: center;
+  }
+  .topbar h1:first-child {
+    text-align: left;
+  }
+  button {
+    font: inherit;
+  }
+  .pill {
+    flex-shrink: 0;
+    background: #1c1915;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  .text-button {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: #1c1915;
+    padding: 10px 4px;
+    cursor: pointer;
+  }
+  .foods-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    list-style: none;
+    padding-bottom: 8px;
+  }
+  .foods-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #ddd6c8;
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-size: 18px;
+  }
+  .delete-button {
+    background: none;
+    border: none;
+    color: #77716a;
+    font-size: 22px;
+    line-height: 1;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #77716a;
+    font-size: 18px;
+    padding: 24px;
+  }
+  .empty[hidden] {
+    display: none;
+  }
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal[hidden] {
+    display: none;
+  }
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .sheet {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .sheet h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .sheet label {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .sheet input {
+    width: 100%;
+    font: inherit;
+    font-size: 18px;
+    border: 1px solid #ddd6c8;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  .form-actions .secondary {
+    background: #ffffff;
+    color: #1c1915;
+    border: 1px solid #ddd6c8;
+    border-radius: 999px;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  .form-actions .primary {
+    background: #1c1915;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  @media (min-width: 700px) {
+    .modal {
+      align-items: center;
+      padding: 24px;
+    }
+    .sheet {
+      border-radius: 20px;
+      padding: 24px;
+    }
   }
   .calendar {
     flex-shrink: 0;
@@ -130,22 +288,50 @@
 </style>
 </head>
 <body>
-  <h1>Food Schedule</h1>
-  <nav class="calendar" id="calendar" aria-label="Calendar"></nav>
-  <main class="schedule">
-    <section class="meal">
-      <h2>Breakfast</h2>
-      <p>Pasta</p>
-    </section>
-    <section class="meal">
-      <h2>Lunch</h2>
-      <p>Pasta</p>
-    </section>
-    <section class="meal">
-      <h2>Dinner</h2>
-      <p>Pasta</p>
-    </section>
-  </main>
+  <section id="schedule-view" class="view">
+    <header class="topbar">
+      <h1>Food Schedule</h1>
+      <button type="button" id="go-foods" class="pill">Foods</button>
+    </header>
+    <nav class="calendar" id="calendar" aria-label="Calendar"></nav>
+    <main class="schedule">
+      <section class="meal">
+        <h2>Breakfast</h2>
+        <p>Pasta</p>
+      </section>
+      <section class="meal">
+        <h2>Lunch</h2>
+        <p>Pasta</p>
+      </section>
+      <section class="meal">
+        <h2>Dinner</h2>
+        <p>Pasta</p>
+      </section>
+    </main>
+  </section>
+  <section id="foods-view" class="view" hidden>
+    <header class="topbar">
+      <button type="button" id="back-schedule" class="text-button">&lsaquo; Schedule</button>
+      <h1>Foods</h1>
+      <button type="button" id="open-add" class="pill">+ Add</button>
+    </header>
+    <p id="foods-empty" class="empty">No foods yet. Tap + Add to add your first dish.</p>
+    <ul id="foods-list" class="foods-list"></ul>
+  </section>
+  <div id="add-modal" class="modal" hidden>
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <h2 id="add-title">New food</h2>
+      <form id="add-form">
+        <label for="food-name">Food name</label>
+        <input id="food-name" type="text" autocomplete="off" placeholder="e.g. Pasta">
+        <div class="form-actions">
+          <button type="button" id="cancel-add" class="secondary">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <script>
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -181,6 +367,92 @@
     if (todayButton) {
       todayButton.scrollIntoView({ inline: "center", block: "nearest" });
     }
+  </script>
+  <script>
+    const scheduleView = document.getElementById("schedule-view");
+    const foodsView = document.getElementById("foods-view");
+    const foodsList = document.getElementById("foods-list");
+    const foodsEmpty = document.getElementById("foods-empty");
+    const addModal = document.getElementById("add-modal");
+    const foodNameInput = document.getElementById("food-name");
+    const addForm = document.getElementById("add-form");
+    const storageKey = "foodschedule.foods";
+
+    function loadFoods() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey));
+        return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    let foods = loadFoods();
+
+    function saveFoods() {
+      localStorage.setItem(storageKey, JSON.stringify(foods));
+    }
+
+    function renderFoods(scrollToNew) {
+      foodsList.innerHTML = "";
+      foodsEmpty.hidden = foods.length > 0;
+      foods.forEach((name, index) => {
+        const item = document.createElement("li");
+        const label = document.createElement("span");
+        label.textContent = name;
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-button";
+        deleteButton.setAttribute("aria-label", "Delete " + name);
+        deleteButton.textContent = "\u00d7";
+        deleteButton.addEventListener("click", () => {
+          foods.splice(index, 1);
+          saveFoods();
+          renderFoods(false);
+        });
+        item.appendChild(label);
+        item.appendChild(deleteButton);
+        foodsList.appendChild(item);
+      });
+      if (scrollToNew && foodsList.lastElementChild) {
+        foodsList.lastElementChild.scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    function showView(view) {
+      scheduleView.hidden = view !== "schedule";
+      foodsView.hidden = view !== "foods";
+    }
+
+    function openModal() {
+      foodNameInput.value = "";
+      addModal.hidden = false;
+      foodNameInput.focus();
+    }
+
+    function closeModal() {
+      addModal.hidden = true;
+    }
+
+    document.getElementById("go-foods").addEventListener("click", () => showView("foods"));
+    document.getElementById("back-schedule").addEventListener("click", () => showView("schedule"));
+    document.getElementById("open-add").addEventListener("click", openModal);
+    document.getElementById("cancel-add").addEventListener("click", closeModal);
+    document.getElementById("modal-backdrop").addEventListener("click", closeModal);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !addModal.hidden) closeModal();
+    });
+    addForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = foodNameInput.value.trim();
+      if (!name) return;
+      foods.push(name);
+      saveFoods();
+      renderFoods(true);
+      closeModal();
+    });
+
+    renderFoods(false);
   </script>
 </body>
 </html>
