@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Schedule</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f3ec;
+    color: #1c1915;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+  .schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .meal {
+    background: #ffffff;
+    border: 1px solid #ddd6c8;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .meal h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .meal p {
+    font-size: 18px;
+    color: #55504a;
+  }
+  @media (min-width: 700px) {
+    .schedule {
+      flex-direction: row;
+    }
+    .meal {
+      flex: 1;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>Food Schedule</h1>
+  <main class="schedule">
+    <section class="meal">
+      <h2>Breakfast</h2>
+      <p>Pasta</p>
+    </section>
+    <section class="meal">
+      <h2>Lunch</h2>
+      <p>Pasta</p>
+    </section>
+    <section class="meal">
+      <h2>Dinner</h2>
+      <p>Pasta</p>
+    </section>
+  </main>
+</body>
+</html>
