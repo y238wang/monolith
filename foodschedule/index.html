@@ -24,7 +24,70 @@
     flex-shrink: 0;
     text-align: center;
     font-size: 28px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+  }
+  .calendar {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 16px 12px;
+    margin: 0 -16px 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .calendar::-webkit-scrollbar {
+    display: none;
+  }
+  .day {
+    flex: 0 0 auto;
+    width: 74px;
+    height: 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: #ffffff;
+    border: 1px solid #ddd6c8;
+    border-radius: 14px;
+    color: #1c1915;
+    cursor: pointer;
+    scroll-snap-align: center;
+  }
+  .day .month,
+  .day .weekday {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #77716a;
+  }
+  .day .number {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .day .today-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .day.is-today .today-dot {
+    background: #1c1915;
+  }
+  .day.is-selected {
+    background: #1c1915;
+    border-color: #1c1915;
+    color: #ffffff;
+  }
+  .day.is-selected .month,
+  .day.is-selected .weekday {
+    color: #d8d2c4;
+  }
+  .day.is-selected.is-today .today-dot {
+    background: #ffffff;
   }
   .schedule {
     flex: 1;
@@ -68,6 +131,7 @@
 </head>
 <body>
   <h1>Food Schedule</h1>
+  <nav class="calendar" id="calendar" aria-label="Calendar"></nav>
   <main class="schedule">
     <section class="meal">
       <h2>Breakfast</h2>
@@ -82,5 +146,41 @@
       <p>Pasta</p>
     </section>
   </main>
+  <script>
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const calendar = document.getElementById("calendar");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let todayButton = null;
+
+    for (let offset = -14; offset <= 14; offset++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + offset);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "day";
+      button.setAttribute("aria-label", date.toDateString());
+      button.innerHTML =
+        '<span class="month">' + months[date.getMonth()] + "</span>" +
+        '<span class="number">' + date.getDate() + "</span>" +
+        '<span class="weekday">' + weekdays[date.getDay()] + "</span>" +
+        '<span class="today-dot" aria-hidden="true"></span>';
+      if (offset === 0) {
+        button.classList.add("is-today", "is-selected");
+        todayButton = button;
+      }
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".day.is-selected").forEach((el) => el.classList.remove("is-selected"));
+        button.classList.add("is-selected");
+        button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      });
+      calendar.appendChild(button);
+    }
+
+    if (todayButton) {
+      todayButton.scrollIntoView({ inline: "center", block: "nearest" });
+    }
+  </script>
 </body>
 </html>
