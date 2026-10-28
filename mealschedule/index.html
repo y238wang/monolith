@@ -336,6 +336,37 @@
     padding: 24px;
     text-align: center;
   }
+  .meal-breakfast {
+    background: #fff7d1;
+    border-color: #e6d489;
+  }
+  .meal-lunch {
+    background: #e8f3e3;
+    border-color: #b7d9ab;
+  }
+  .meal-dinner {
+    background: #ece9f7;
+    border-color: #c7bfe6;
+  }
+  .sort-row {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sort-button {
+    background: #ffffff;
+    border: 1px solid #ddd6c8;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .sort-button.is-active {
+    background: #1c1915;
+    border-color: #1c1915;
+    color: #ffffff;
+  }
   .meal-head {
     display: flex;
     align-items: center;
@@ -388,7 +419,7 @@
     </header>
     <nav class="calendar" id="calendar" aria-label="Calendar"></nav>
     <main class="schedule">
-      <section class="meal">
+      <section class="meal meal-breakfast">
         <div class="meal-head">
           <h2>Breakfast</h2>
           <button type="button" class="edit-button" id="edit-breakfast" aria-label="Edit breakfast">&#9998;</button>
@@ -396,7 +427,7 @@
         <p id="breakfast-meal">Fast</p>
         <p class="meal-source" id="breakfast-source"></p>
       </section>
-      <section class="meal">
+      <section class="meal meal-lunch">
         <div class="meal-head">
           <h2>Lunch</h2>
           <button type="button" class="edit-button" id="edit-lunch" aria-label="Edit lunch">&#9998;</button>
@@ -404,7 +435,7 @@
         <p id="lunch-meal">Fast</p>
         <p class="meal-source" id="lunch-source"></p>
       </section>
-      <section class="meal">
+      <section class="meal meal-dinner">
         <div class="meal-head">
           <h2>Dinner</h2>
           <button type="button" class="edit-button" id="edit-dinner" aria-label="Edit dinner">&#9998;</button>
@@ -420,6 +451,12 @@
       <h1>Meals</h1>
       <button type="button" id="open-add" class="pill">+ Add</button>
     </header>
+    <div class="sort-row" role="group" aria-label="Sort meals">
+      <button type="button" class="sort-button is-active" data-sort="added">Added</button>
+      <button type="button" class="sort-button" data-sort="name">Name</button>
+      <button type="button" class="sort-button" data-sort="slot">Slot</button>
+      <button type="button" class="sort-button" data-sort="type">Type</button>
+    </div>
     <p id="meals-empty" class="empty">No meals yet. Tap + Add to add your first meal.</p>
     <ul id="meals-list" class="meals-list"></ul>
   </section>
@@ -893,11 +930,34 @@
       return dates;
     }
 
-    function renderMeals(scrollToNew) {
+    let mealSort = "added";
+
+    function sortedMeals() {
+      const withIndex = meals.map((meal, index) => ({ meal: meal, index: index }));
+      if (mealSort === "name") {
+        withIndex.sort((a, b) => {
+          const an = a.meal.name.toLowerCase();
+          const bn = b.meal.name.toLowerCase();
+          if (an < bn) return -1;
+          if (an > bn) return 1;
+          return a.index - b.index;
+        });
+      } else if (mealSort === "slot") {
+        const order = { breakfast: 0, lunch: 1, dinner: 2 };
+        withIndex.sort((a, b) => (order[a.meal.slot] - order[b.meal.slot]) || (a.index - b.index));
+      } else if (mealSort === "type") {
+        const order = { default: 0, recurring: 1 };
+        withIndex.sort((a, b) => (order[a.meal.type] - order[b.meal.type]) || (a.index - b.index));
+      }
+      return withIndex.map((entry) => entry.meal);
+    }
+
+    function renderMeals(scrollToNew, newMealId) {
       mealsList.innerHTML = "";
       mealsEmpty.hidden = meals.length > 0;
-      meals.forEach((meal, index) => {
+      sortedMeals().forEach((meal) => {
         const item = document.createElement("li");
+        item.setAttribute("data-meal-id", meal.id);
         const info = document.createElement("div");
         info.className = "meal-info";
         const label = document.createElement("span");
@@ -925,7 +985,8 @@
             });
             saveEdits();
           }
-          meals.splice(index, 1);
+          const at = meals.findIndex((m) => m.id === meal.id);
+          if (at !== -1) meals.splice(at, 1);
           saveMeals();
           renderMeals(false);
           renderSchedule();
@@ -934,8 +995,13 @@
         item.appendChild(deleteButton);
         mealsList.appendChild(item);
       });
-      if (scrollToNew && mealsList.lastElementChild) {
-        mealsList.lastElementChild.scrollIntoView({ block: "nearest" });
+      if (scrollToNew) {
+        let target = null;
+        if (newMealId && mealsList.querySelector) {
+          target = mealsList.querySelector('[data-meal-id="' + newMealId + '"]');
+        }
+        if (!target) target = mealsList.lastElementChild;
+        if (target) target.scrollIntoView({ block: "nearest" });
       }
     }
 
@@ -1024,6 +1090,14 @@
       editModal.hidden = true;
     }
 
+    document.querySelectorAll(".sort-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        mealSort = button.getAttribute("data-sort");
+        document.querySelectorAll(".sort-button").forEach((el) => el.classList.remove("is-active"));
+        button.classList.add("is-active");
+        renderMeals(false);
+      });
+    });
     document.getElementById("go-meals").addEventListener("click", () => showView("meals"));
     document.getElementById("back-schedule").addEventListener("click", () => showView("schedule"));
     document.getElementById("open-add").addEventListener("click", openModal);
@@ -1094,7 +1168,7 @@
       if (recurring) meal.recurring = recurring;
       meals.push(meal);
       saveMeals();
-      renderMeals(true);
+      renderMeals(true, meal.id);
       renderSchedule();
       closeModal();
     });
