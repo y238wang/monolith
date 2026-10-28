@@ -89,6 +89,15 @@
     padding: 16px 18px;
     font-size: 18px;
   }
+  .meal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .slot-tags {
+    font-size: 14px;
+    color: #77716a;
+  }
   .delete-button {
     background: none;
     border: none;
@@ -97,6 +106,24 @@
     line-height: 1;
     padding: 4px 8px;
     cursor: pointer;
+  }
+  .checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+  .checkboxes input {
+    width: auto;
+    margin-bottom: 0;
+    accent-color: #1c1915;
   }
   .empty {
     flex: 1;
@@ -297,15 +324,15 @@
     <main class="schedule">
       <section class="meal">
         <h2>Breakfast</h2>
-        <p>Fast</p>
+        <p id="breakfast-meal">Fast</p>
       </section>
       <section class="meal">
         <h2>Lunch</h2>
-        <p>Fast</p>
+        <p id="lunch-meal">Fast</p>
       </section>
       <section class="meal">
         <h2>Dinner</h2>
-        <p>Fast</p>
+        <p id="dinner-meal">Fast</p>
       </section>
     </main>
   </section>
@@ -325,6 +352,11 @@
       <form id="add-form">
         <label for="meal-name">Meal name</label>
         <input id="meal-name" type="text" autocomplete="off" placeholder="e.g. Pasta">
+        <div class="checkboxes">
+          <label><input type="checkbox" id="slot-breakfast" checked> Breakfast</label>
+          <label><input type="checkbox" id="slot-lunch" checked> Lunch</label>
+          <label><input type="checkbox" id="slot-dinner" checked> Dinner</label>
+        </div>
         <div class="form-actions">
           <button type="button" id="cancel-add" class="secondary">Cancel</button>
           <button type="submit" class="primary">Save</button>
@@ -378,10 +410,36 @@
     const addForm = document.getElementById("add-form");
     const storageKey = "mealschedule.meals";
 
+    const slots = ["breakfast", "lunch", "dinner"];
+    const slotLabels = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
+
+    function newMealId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
     function loadMeals() {
       try {
         const parsed = JSON.parse(localStorage.getItem(storageKey));
-        return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
+        if (!Array.isArray(parsed)) return [];
+        // Migrate meals saved before slots existed: a plain name becomes
+        // a meal checked for every slot.
+        return parsed
+          .map((item) => {
+            if (typeof item === "string") {
+              return { id: newMealId(), name: item, breakfast: true, lunch: true, dinner: true };
+            }
+            if (item && typeof item.name === "string") {
+              return {
+                id: typeof item.id === "string" ? item.id : newMealId(),
+                name: item.name,
+                breakfast: item.breakfast !== false,
+                lunch: item.lunch !== false,
+                dinner: item.dinner !== false,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
       } catch (error) {
         return [];
       }
@@ -393,24 +451,183 @@
       localStorage.setItem(storageKey, JSON.stringify(meals));
     }
 
+    const historyKey = "mealschedule.history";
+
+    function loadHistory() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(historyKey));
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    let history = loadHistory();
+
+    function saveHistory() {
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    }
+
+    function dateKey(date) {
+      return date.getFullYear() + "-" +
+        String(date.getMonth() + 1).padStart(2, "0") + "-" +
+        String(date.getDate()).padStart(2, "0");
+    }
+
+    function parseDateKey(text) {
+      const parts = text.split("-").map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function daysBetween(from, to) {
+      const fromDay = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+      const toDay = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+      return Math.round((toDay - fromDay) / 86400000);
+    }
+
+    function poolFor(slot) {
+      return meals.filter((meal) => meal[slot]);
+    }
+
+    function fastSchedule() {
+      return { breakfast: "Fast", lunch: "Fast", dinner: "Fast" };
+    }
+
+    // Next day's schedule from the previous day's stored schedule, one
+    // round-robin step per slot. A previous meal that is no longer in the
+    // pool (deleted, or Fast) falls back to the first meal in the pool.
+    // Cycles are independent per slot, so the same meal may repeat
+    // within a day.
+    function nextDaySchedule(prev) {
+      const next = {};
+      slots.forEach((slot) => {
+        const pool = poolFor(slot);
+        if (pool.length === 0) {
+          next[slot] = "Fast";
+          return;
+        }
+        const position = pool.findIndex((meal) => meal.name === prev[slot]);
+        next[slot] = position === -1 ? pool[0].name : pool[(position + 1) % pool.length].name;
+      });
+      return next;
+    }
+
+    // Only the past is stored, by meal name, and never recomputed:
+    // deleting a meal leaves its stored days untouched. Today is live:
+    // adding, deleting, or re-checking a meal today changes today's
+    // schedule immediately. A day is locked into history when it becomes
+    // past. On load, backfill any skipped past days between the last
+    // stored day and yesterday, so history stays continuous.
+    function ensurePastLocked() {
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const todayText = dateKey(todayDate);
+      let changed = false;
+      // Today is live, never stored. Drop any today entry left by an
+      // earlier version so today always recomputes.
+      if (history[todayText]) {
+        delete history[todayText];
+        changed = true;
+      }
+      const storedDates = Object.keys(history).filter((date) => date < todayText).sort();
+      if (storedDates.length === 0) {
+        if (changed) saveHistory();
+        return;
+      }
+      const lastText = storedDates[storedDates.length - 1];
+      let prev = history[lastText];
+      let current = parseDateKey(lastText);
+      while (true) {
+        current.setDate(current.getDate() + 1);
+        const key = dateKey(current);
+        if (key >= todayText) break;
+        const next = nextDaySchedule(prev);
+        history[key] = next;
+        prev = next;
+        changed = true;
+      }
+      if (changed) saveHistory();
+    }
+
+    function computeTodaySchedule() {
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const todayText = dateKey(todayDate);
+      const storedDates = Object.keys(history).filter((date) => date < todayText).sort();
+      if (storedDates.length === 0) {
+        // No past to advance from: today is the first meal in each pool.
+        const schedule = {};
+        slots.forEach((slot) => {
+          const pool = poolFor(slot);
+          schedule[slot] = pool.length === 0 ? "Fast" : pool[0].name;
+        });
+        return schedule;
+      }
+      // Today is one round-robin step after the most recent past day
+      // (yesterday, after backfilling), using the current pools.
+      return nextDaySchedule(history[storedDates[storedDates.length - 1]]);
+    }
+
+    function scheduleFor(targetDate) {
+      const targetText = dateKey(targetDate);
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const todayText = dateKey(todayDate);
+      if (targetText < todayText) {
+        return history[targetText] || fastSchedule();
+      }
+      const todaySchedule = computeTodaySchedule();
+      if (targetText === todayText) return todaySchedule;
+      // Future preview only: advance from today's live schedule using
+      // the current pools. It is not stored, so it updates if meals
+      // change, until that day becomes past and gets locked.
+      let prev = todaySchedule;
+      let next = prev;
+      const delta = daysBetween(todayDate, targetDate);
+      for (let i = 0; i < delta; i++) {
+        next = nextDaySchedule(prev);
+        prev = next;
+      }
+      return next;
+    }
+
+    let selectedDate = new Date();
+    selectedDate.setHours(0, 0, 0, 0);
+
+    function renderSchedule() {
+      ensurePastLocked();
+      const schedule = scheduleFor(selectedDate);
+      slots.forEach((slot) => {
+        document.getElementById(slot + "-meal").textContent = schedule[slot];
+      });
+    }
+
     function renderMeals(scrollToNew) {
       mealsList.innerHTML = "";
       mealsEmpty.hidden = meals.length > 0;
-      meals.forEach((name, index) => {
+      meals.forEach((meal, index) => {
         const item = document.createElement("li");
+        const info = document.createElement("div");
+        info.className = "meal-info";
         const label = document.createElement("span");
-        label.textContent = name;
+        label.textContent = meal.name;
+        const tags = document.createElement("span");
+        tags.className = "slot-tags";
+        tags.textContent = slots.filter((slot) => meal[slot]).map((slot) => slotLabels[slot]).join(" \u00b7 ") || "No slots";
+        info.appendChild(label);
+        info.appendChild(tags);
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
         deleteButton.className = "delete-button";
-        deleteButton.setAttribute("aria-label", "Delete " + name);
+        deleteButton.setAttribute("aria-label", "Delete " + meal.name);
         deleteButton.textContent = "\u00d7";
         deleteButton.addEventListener("click", () => {
           meals.splice(index, 1);
           saveMeals();
           renderMeals(false);
+          renderSchedule();
         });
-        item.appendChild(label);
+        item.appendChild(info);
         item.appendChild(deleteButton);
         mealsList.appendChild(item);
       });
@@ -426,6 +643,9 @@
 
     function openModal() {
       mealNameInput.value = "";
+      document.getElementById("slot-breakfast").checked = true;
+      document.getElementById("slot-lunch").checked = true;
+      document.getElementById("slot-dinner").checked = true;
       addModal.hidden = false;
       mealNameInput.focus();
     }
@@ -446,13 +666,30 @@
       event.preventDefault();
       const name = mealNameInput.value.trim();
       if (!name) return;
-      meals.push(name);
+      meals.push({
+        id: newMealId(),
+        name: name,
+        breakfast: document.getElementById("slot-breakfast").checked,
+        lunch: document.getElementById("slot-lunch").checked,
+        dinner: document.getElementById("slot-dinner").checked,
+      });
       saveMeals();
       renderMeals(true);
+      renderSchedule();
       closeModal();
     });
 
+    document.querySelectorAll(".day").forEach((dayButton) => {
+      dayButton.addEventListener("click", () => {
+        const parsed = new Date(dayButton.getAttribute("aria-label"));
+        parsed.setHours(0, 0, 0, 0);
+        selectedDate = parsed;
+        renderSchedule();
+      });
+    });
+
     renderMeals(false);
+    renderSchedule();
   </script>
 </body>
 </html>
