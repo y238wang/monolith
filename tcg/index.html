@@ -540,6 +540,21 @@
   }
   #end-turn:active { transform: scale(0.97); }
   #end-turn:disabled { opacity: 0.6; }
+  #quit-btn {
+    font-size: 0.85rem;
+    font-weight: 700;
+    width: 100%;
+    padding: 0.6rem 0.3rem;
+    border: 2px solid #1c1915;
+    border-radius: 14px;
+    background: rgba(250, 247, 238, 0.9);
+    color: #1c1915;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #quit-btn:active { transform: scale(0.97); }
+  #result-hint { font-size: 0.85rem; opacity: 0.7; }
   #player-zone { margin-top: 0.75rem; }
 
   #result-banner {
@@ -713,6 +728,7 @@
       <p id="turn-counter">Turn 1 of 6</p>
       <div id="opp-discard-slot"><span>opponent discard</span></div>
       <button id="end-turn" type="button">Submit Turn</button>
+      <button id="quit-btn" type="button">Quit</button>
       <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
     </div>
   </section>
@@ -727,6 +743,7 @@
     <div id="result-sub"></div>
     <button id="new-game" type="button">New Game</button>
     <button id="menu-btn" type="button">Menu</button>
+    <div id="result-hint">Tap outside this card to view the board</div>
   </div>
   </div><!-- /game-screen -->
 
@@ -840,6 +857,7 @@
     var game = null; // TCGEngine game object, created by newGame
     var pendingTarget = null; // targeting prompt: { kind, handIndex, ministry? }
     var revealing = false; // true while the AI's plays are being revealed
+    var revealTimer = null; // pending AI-reveal timeout, cleared on quit/new game
     var collection = {}; // uid -> owned count
     var deckList = [];   // array of uids (duplicates = copies)
 
@@ -1091,7 +1109,7 @@
       document.getElementById('opp-income-num').textContent = V.gameOver ? '' : V.opp.income;
       document.getElementById('income-num').textContent = V.gameOver ? '' : V.me.income;
       document.getElementById('end-turn').textContent =
-        V.turn === MAX_TURNS && !V.gameOver ? 'Finish Game' : 'Submit Turn';
+        V.gameOver ? 'New Game' : V.turn === MAX_TURNS ? 'Finish Game' : 'Submit Turn';
       renderBoard(V);
       renderHand(V);
       document.getElementById('player-deck-count').textContent = 'deck: ' + V.me.deckCount;
@@ -1594,6 +1612,7 @@
 
     function newGame(useRandom) {
       if (useRandom !== undefined) randomMode = useRandom;
+      if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
       pendingTarget = null;
       revealing = false;
       document.getElementById('end-turn').disabled = false;
@@ -1864,7 +1883,8 @@
     });
 
     document.getElementById('end-turn').addEventListener('click', function () {
-      if (!game || game.view(0).gameOver || revealing) return; // restart now lives in the result modal
+      if (!game || revealing) return;
+      if (game.view(0).gameOver) { newGame(); return; } // dismissed modal: same as New Game
       // A targeting prompt left open resolves as a fizzle, as before: the
       // card was already committed, only its effect is dropped.
       if (pendingTarget) {
@@ -1891,7 +1911,8 @@
       } else {
         render(); // reveal what the AI played this turn
         toast("Opponent's turn");
-        setTimeout(function () {
+        revealTimer = setTimeout(function () {
+          revealTimer = null;
           toastEvents(game.submit(1)); // income -> tax -> draw, both players
           revealing = false;
           document.getElementById('end-turn').disabled = false;
@@ -2083,6 +2104,23 @@
     });
 
     document.getElementById('menu-btn').addEventListener('click', function () {
+      document.getElementById('result-banner').classList.add('hidden');
+      showScreen('menu');
+    });
+
+    // Dismiss the result modal by tapping its backdrop, leaving the final
+    // board visible; the side-panel button then reads "New Game".
+    document.getElementById('result-banner').addEventListener('click', function (e) {
+      if (e.target === this) this.classList.add('hidden');
+    });
+
+    // Quit mid-game: abandon the current game and return to the menu.
+    // Clearing the pending reveal timeout keeps it from firing into a
+    // later game if the player immediately starts a new one.
+    document.getElementById('quit-btn').addEventListener('click', function () {
+      if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+      revealing = false;
+      document.getElementById('end-turn').disabled = false;
       document.getElementById('result-banner').classList.add('hidden');
       showScreen('menu');
     });
