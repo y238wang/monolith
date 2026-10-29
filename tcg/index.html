@@ -86,7 +86,7 @@
   #pack-screen { background-image: url('assets/pack-bg.webp'); }
   #deck-screen { overflow: hidden; }
   #deck-screen > * { flex: 0 0 auto; }
-  #deck-area { flex: 1 1 0; min-height: 0; overflow-y: auto; touch-action: pan-y; }
+  #deck-area { flex: 0 0 40%; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #pool-area { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; }
   #deck-head, #collection-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0 0.6rem; }
   #deck-head h2, #collection-head h2 {
@@ -175,12 +175,12 @@
   #deck-area, #pool-area {
     border: 2px dashed rgba(28, 25, 21, 0.4);
     border-radius: 12px;
-    padding: 0.6rem 0.4rem;
+    padding: 0.3rem 0.2rem;
     min-height: 110px;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.4rem;
   }
-  #deck-area.drop-target, #pool-area.drop-target { border-color: #4caf50; border-style: solid; background: rgba(76, 175, 80, 0.06); }
-  #deck-area .cgrid, #pool-area .cgrid { padding: 0; }
+  #deck-screen .dcell { cursor: pointer; }
+  #deck-area .cgrid, #pool-area .cgrid { padding: 0; gap: 10px 8px; }
   #deck-area .db-empty { opacity: 0.5; font-size: 0.85rem; text-align: center; width: 100%; padding: 1rem 0; }
   .slot .card.face-up.drop-ok-card { outline: 2px solid #4caf50; }
   .slot .card.face-up.drop-full-card { outline: 2px solid #a32e22; }
@@ -757,7 +757,7 @@
       <button id="deck-reset" type="button">Reset to starter</button>
       <button id="deck-clear" type="button">Clear</button>
     </div>
-    <div class="zone-label">Your deck <span class="db-hint">(drag cards here to add &middot; drag out to remove)</span></div>
+    <div class="zone-label">Your deck <span class="db-hint">(tap a card to move it)</span></div>
     <div id="deck-area"></div>
     <div class="zone-label">Owned cards</div>
     <div id="pool-filters" class="chips"></div>
@@ -1515,7 +1515,7 @@
       if (uids.length === 0) {
         var empty = document.createElement('div');
         empty.className = 'db-empty';
-        empty.textContent = 'Drag cards here from your collection below.';
+        empty.textContent = 'Tap cards in your collection below to add them.';
         grid.appendChild(empty);
       } else {
         sortCards(uids.map(function (uid) { return cardDef[uid]; })).forEach(function (t) {
@@ -1551,61 +1551,34 @@
       }
     }
 
-    var ddrag = null;
+    // Tap to move: one tap moves one copy between zones, so tapping
+    // twice moves two copies. A press that moves >12px is a scroll, not
+    // a tap, and a long-press that opened the zoom does not move a card.
+    var deckTap = null;
 
     document.addEventListener('pointerdown', function (e) {
-      if (ddrag || drag) return;
+      if (zoomOpen) return;
       var cell = e.target.closest ? e.target.closest('#deck-screen .dcell') : null;
       if (!cell) return;
-      var ghost = cell.querySelector('.card').cloneNode(true);
-      ghost.style.position = 'fixed';
-      ghost.style.zIndex = '1000';
-      ghost.style.pointerEvents = 'none';
-      ghost.style.opacity = '0.92';
-      ghost.style.margin = '0';
-      ghost.style.transform = 'translate(-50%, -50%)';
-      ghost.style.left = e.clientX + 'px';
-      ghost.style.top = e.clientY + 'px';
-      document.body.appendChild(ghost);
-      ddrag = { ghost: ghost, uid: cell.dataset.uid, from: cell.dataset.from, to: null };
-      e.preventDefault();
+      deckTap = { uid: cell.dataset.uid, from: cell.dataset.from, x: e.clientX, y: e.clientY };
     });
 
     document.addEventListener('pointermove', function (e) {
-      if (!ddrag) return;
-      ddrag.ghost.style.left = e.clientX + 'px';
-      ddrag.ghost.style.top = e.clientY + 'px';
-      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
-        el.classList.remove('drop-target');
-      });
-      ddrag.ghost.style.display = 'none';
-      var under = document.elementFromPoint(e.clientX, e.clientY);
-      ddrag.ghost.style.display = '';
-      var da = under && under.closest ? under.closest('#deck-area') : null;
-      var pa = under && under.closest ? under.closest('#pool-area') : null;
-      ddrag.to = null;
-      if (ddrag.from === 'pool' && da) { da.classList.add('drop-target'); ddrag.to = 'deck'; }
-      else if (ddrag.from === 'deck' && pa) { pa.classList.add('drop-target'); ddrag.to = 'pool'; }
+      if (!deckTap) return;
+      if (Math.hypot(e.clientX - deckTap.x, e.clientY - deckTap.y) > 12) deckTap = null;
     });
 
     document.addEventListener('pointerup', function () {
-      if (!ddrag) return;
-      if (ddrag.to === 'deck') tryAddToDeck(ddrag.uid);
-      else if (ddrag.to === 'pool') removeFromDeck(ddrag.uid);
-      ddrag.ghost.remove();
-      ddrag = null;
-      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
-        el.classList.remove('drop-target');
-      });
+      if (!deckTap) return;
+      var tap = deckTap;
+      deckTap = null;
+      if (zoomOpen) return; // long-press zoom: tapping the zoom closed it, don't move
+      if (tap.from === 'pool') tryAddToDeck(tap.uid);
+      else if (tap.from === 'deck') removeFromDeck(tap.uid);
     });
 
     document.addEventListener('pointercancel', function () {
-      if (!ddrag) return;
-      ddrag.ghost.remove();
-      ddrag = null;
-      document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
-        el.classList.remove('drop-target');
-      });
+      deckTap = null;
     });
 
     var randomMode = false;
@@ -1671,13 +1644,7 @@
       document.getElementById('zoom-modal').classList.remove('hidden');
       zoomOpen = true;
       if (drag) { drag.ghost.remove(); drag = null; clearHighlights(); }
-      if (ddrag) {
-        ddrag.ghost.remove();
-        ddrag = null;
-        document.querySelectorAll('#deck-area.drop-target, #pool-area.drop-target').forEach(function (el) {
-          el.classList.remove('drop-target');
-        });
-      }
+      deckTap = null; // a deck-builder tap in progress is cancelled by the zoom
     }
 
     function hideZoom() {
