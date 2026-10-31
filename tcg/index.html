@@ -183,6 +183,8 @@
   #deck-area .cgrid, #pool-area .cgrid { padding: 0; gap: 10px 8px; }
   #deck-area .db-empty { opacity: 0.5; font-size: 0.85rem; text-align: center; width: 100%; padding: 1rem 0; }
   .slot .card.face-up.drop-ok-card { outline: 2px solid #4caf50; }
+  .slot .card.face-up.action-ready { outline: 2px solid #d4a017; cursor: pointer; }
+  .slot .card.face-up.action-armed { outline: 3px solid #a32e22; cursor: pointer; }
   .slot .card.face-up.drop-full-card { outline: 2px solid #a32e22; }
   .slot .card.opp.targetable { outline: 2px solid #b8860b; cursor: pointer; }
   .hand .card.discardable { outline: 2px solid #a32e22; cursor: pointer; }
@@ -729,7 +731,7 @@
       <div id="opp-discard-slot"><span>opponent discard</span></div>
       <button id="end-turn" type="button">Submit Turn</button>
       <button id="quit-btn" type="button">Quit</button>
-      <div id="discard-slot"><span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span></div>
+      <div id="discard-slot"><span>discard</span></div>
     </div>
   </section>
 
@@ -856,6 +858,8 @@
     // The match lives in the engine (game); the page keeps only UI state.
     var game = null; // TCGEngine game object, created by newGame
     var pendingTarget = null; // targeting prompt: { kind, handIndex, ministry? }
+    var pendingAction = null; // Auctioneer action prompt: { ministry, slot } — tap a hand card to discard it
+    var tapRecord = null; // { kind: 'auctioneer'|'hand', ministry, slot, handIndex, x, y } for tap-to-act detection
     var revealing = false; // true while the AI's plays are being revealed
     var revealTimer = null; // pending AI-reveal timeout, cleared on quit/new game
     var collection = {}; // uid -> owned count
@@ -1052,16 +1056,16 @@
           if (q === 1 && !V.me.board[m][q]) pslot.appendChild(slotHint(m));
           if (V.me.board[m][q]) {
             var pc = cardEl(V.me.board[m][q], 'face-up');
-            if (pendingTarget && pendingTarget.kind === 'return') pc.classList.add('targetable');
             pc.querySelector('.power').textContent = agentPower(V.me.board[m][q]);
+            if (V.me.board[m][q].uid === 'auctioneer' && !V.me.board[m][q].actionUsed && !V.gameOver) {
+              pc.classList.add(pendingAction && pendingAction.ministry === m && pendingAction.slot === q ? 'action-armed' : 'action-ready');
+            }
             pslot.appendChild(pc);
-            var eqs = V.me.board[m][q].equips || [];
-            if (eqs.length > 0) {
-              var ebonus = 0;
-              eqs.forEach(function (e) { ebonus += e.attachPower || 0; });
+            var it = V.me.board[m][q].item;
+            if (it) {
               var eb = document.createElement('span');
               eb.className = 'equip-badge';
-              eb.textContent = '+' + ebonus;
+              eb.textContent = (it.attachPower || 0) > 0 ? '+' + it.attachPower : it.name;
               pslot.appendChild(eb);
             }
           }
@@ -1114,19 +1118,15 @@
       renderHand(V);
       document.getElementById('player-deck-count').textContent = 'deck: ' + V.me.deckCount;
       document.getElementById('opp-deck-count').textContent = 'deck: ' + V.opp.deckCount;
-      document.getElementById('discard-slot').classList.toggle('used', V.me.discardUsed);
       renderDiscardSlots(V);
-      document.getElementById('sell-num').textContent = '+' + V.me.sellValue;
     }
 
-    function renderOneSlot(id, pile, withCoin, sellVal) {
+    function renderOneSlot(id, pile) {
       var slot = document.getElementById(id);
       var top = pile.length > 0 ? pile[pile.length - 1] : null;
       slot.classList.toggle('has-card', !!top);
       if (!top) {
-        slot.innerHTML = id === 'discard-slot'
-          ? '<span>discard</span><span class="discard-reward"><span class="coin"></span><b id="sell-num">+1</b></span>'
-          : '<span>opponent discard</span>';
+        slot.innerHTML = id === 'discard-slot' ? '<span>discard</span>' : '<span>opponent discard</span>';
         return;
       }
       var c = cardEl(top, 'face-up');
@@ -1135,25 +1135,14 @@
       var label = document.createElement('span');
       label.textContent = id === 'discard-slot' ? 'discard' : 'opponent';
       ov.appendChild(label);
-      if (withCoin) {
-        var rw = document.createElement('span');
-        rw.className = 'discard-reward';
-        var coin = document.createElement('span');
-        coin.className = 'coin';
-        var b = document.createElement('b');
-        b.id = 'sell-num';
-        b.textContent = '+' + sellVal;
-        rw.appendChild(coin); rw.appendChild(b);
-        ov.appendChild(rw);
-      }
       slot.innerHTML = '';
       slot.appendChild(c);
       slot.appendChild(ov);
     }
 
     function renderDiscardSlots(V) {
-      renderOneSlot('discard-slot', V.me.discards, true, V.me.sellValue);
-      renderOneSlot('opp-discard-slot', V.opp.discards, false, 0);
+      renderOneSlot('discard-slot', V.me.discards);
+      renderOneSlot('opp-discard-slot', V.opp.discards);
     }
 
     function openDiscardModal(side) {
@@ -1222,7 +1211,8 @@
             else if (e.source === 'moneylender') toast('Moneylender: +3 coins');
             else if (e.source === 'diplomat') toast('Diplomat: +1 coin, drew a card');
             else if (e.source === 'war-chest') toast('+' + e.amount + ' coins');
-            else if (e.source === 'coin-pouch') toast(e.amount > 0 ? 'Coin Pouch: +' + e.amount + ' coins' : 'Coin Pouch: no Commerce agents');
+            else if (e.source === 'coin-pouch') toast('Coin Pouch: +' + e.amount + ' coins');
+            else if (e.source === 'auctioneer') break; // covered by the Auctioneer action toast
             break;
           case 'draw':
             if (e.player !== 0) break;
@@ -1239,10 +1229,22 @@
             else if (e.source === 'grand-treasurer') toast('Grand Treasurer: +3 income');
             else if (e.source === 'abacus') toast('Abacus: +1 income');
             break;
-          case 'noEffect':
+          case 'action':
             if (e.player !== 0) break;
-            if (e.source === 'abacus') toast('Abacus: needs a Commerce agent');
-            else if (e.source === 'dragon-pearl') toast('Dragon Pearl: no agents to return');
+            toast('Auctioneer: discarded ' + e.discardedName + ' for +2 coins');
+            break;
+          case 'removed':
+            toast(e.player === 0
+              ? e.cardName + ' was removed (0 power or below)'
+              : "Opponent's " + e.cardName + ' was removed (0 power or below)');
+            break;
+          case 'incomeTransfer':
+            if (e.player === 0) toast((e.source === 'treasurer' ? 'Treasurer' : 'Grand Treasurer') + ' stolen: +' + e.amount + ' income');
+            else if (e.victim === 0) toast((e.source === 'treasurer' ? 'Treasurer' : 'Grand Treasurer') + ' stolen: -' + e.amount + ' income');
+            break;
+          case 'smokeArmed':
+            if (e.player !== 0) break;
+            toast('Smoke Bomb: opponent loses 1 coin next turn');
             break;
           case 'delayedTax':
             if (e.player !== 0) break;
@@ -1253,9 +1255,7 @@
             toast(e.source === 'double-agent' ? 'Double Agent: opponent discards next turn' : 'Blackmailer: opponent discards next turn');
             break;
           case 'delayedSmoke':
-            if (e.player !== 0) break;
-            toast('Smoke Bomb: opponent loses coins next turn');
-            break;
+            break; // no longer emitted
           case 'weaken':
             if (e.player !== 0) break;
             toast('Poisoned: -3 power');
@@ -1272,10 +1272,7 @@
             if (e.ministry !== 1) break;
             toast(e.victim === 1 ? 'Opponent Commerce bonus lost' : 'Commerce bonus lost');
             break;
-          case 'return':
-            if (e.player !== 0) break;
-            toast('Returned ' + e.cardName + ' to hand: +' + e.coins + ' coins');
-            break;
+
           case 'taxHit':
             toast(e.victim === 1
               ? 'Delayed tax: opponent loses ' + e.amount + ' coin' + (e.amount > 1 ? 's' : '')
@@ -1297,7 +1294,7 @@
               : 'You discard ' + e.count + ' card' + (e.count > 1 ? 's' : ''));
             break;
           default:
-            break; // play, equip, sell, phase, roundStart, gameOver: no toast
+            break; // play, item, phase, roundStart, gameOver: no toast
         }
       });
     }
@@ -1402,8 +1399,7 @@
       { id: 'commerce', label: 'Commerce' },
       { id: 'intrigue', label: 'Intrigue' },
       { id: 'neutral', label: 'Neutral' },
-      { id: 'item', label: 'Items' },
-      { id: 'equip', label: 'Equips' }
+      { id: 'item', label: 'Items' }
     ];
     var collectionFilter = 'all';
     var poolFilter = 'all';
@@ -1411,14 +1407,13 @@
     function cardMatches(t, f) {
       if (f === 'all') return true;
       if (f === 'item') return t.type === 'item';
-      if (f === 'equip') return t.type === 'equip';
       if (f === 'neutral') return t.type === 'agent' && (t.ministry === null || t.ministry === undefined);
       var mi = { militia: 0, commerce: 1, intrigue: 2 }[f];
       return t.ministry === mi;
     }
 
     function sortCards(list) {
-      var typeOrder = { agent: 0, item: 1, equip: 2 };
+      var typeOrder = { agent: 0, item: 1 };
       return list.slice().sort(function (a, b) {
         return (typeOrder[a.type] - typeOrder[b.type]) ||
           ((a.cost === null || a.cost === undefined ? 99 : a.cost) - (b.cost === null || b.cost === undefined ? 99 : b.cost)) ||
@@ -1429,8 +1424,7 @@
     function rarityName(r) { return r === 'C' ? 'Common' : r === 'U' ? 'Uncommon' : 'Rare'; }
 
     function typeLabel(t) {
-      if (t.type === 'item') return 'Item';
-      var base = t.type === 'equip' ? 'Equip' : 'Agent';
+      var base = t.type === 'item' ? 'Item' : 'Agent';
       if (t.ministry !== null && t.ministry !== undefined) return MINISTRIES[t.ministry].name + ' ' + base;
       return 'Neutral ' + base;
     }
@@ -1587,6 +1581,8 @@
       if (useRandom !== undefined) randomMode = useRandom;
       if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
       pendingTarget = null;
+      pendingAction = null;
+      tapRecord = null;
       revealing = false;
       document.getElementById('end-turn').disabled = false;
       game = TCGEngine.createGame({
@@ -1693,26 +1689,8 @@
     document.addEventListener('pointerdown', function (e) {
       if ((game && game.view(0).gameOver) || revealing) return;
       if (e.target.closest('#deck-screen, #collection-screen, #menu-screen')) return;
+      tapRecord = null;
       if (pendingTarget) {
-        if (pendingTarget.kind === 'return') {
-          var rt = e.target.closest ? e.target.closest('.column .slot .card.face-up') : null;
-          if (rt && rt.classList.contains('targetable')) {
-            var rcol = rt.closest('.column');
-            var rm = parseInt(rcol.dataset.ministry, 10);
-            var rslot = rt.closest('.slot');
-            var ridx = parseInt(rslot.dataset.slotIndex, 10);
-            toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex, target: { ministry: rm, slot: ridx } }));
-            pendingTarget = null;
-          } else {
-            // Cancelling a Pearl return still discards it, just without the return.
-            toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex }));
-            pendingTarget = null;
-            toast('Targeting cancelled');
-          }
-          render();
-          e.preventDefault();
-          return;
-        }
         var ot = e.target.closest ? e.target.closest('.column .slot .card.opp') : null;
         if (ot && ot.classList.contains('targetable')) {
           var tcol = ot.closest('.column');
@@ -1730,6 +1708,30 @@
         render();
         e.preventDefault();
         return;
+      }
+      // Auctioneer action taps: record a tap on an own Auctioneer (arm /
+      // cancel) or on a hand card while an action is armed. The tap
+      // resolves in the pointerup handler, so a long-press zoom or a
+      // >12px movement cancels it instead of acting.
+      if (game) {
+        var ac = e.target.closest ? e.target.closest('.column .slot .card.face-up') : null;
+        if (ac) {
+          var acol = ac.closest('.column');
+          var am2 = parseInt(acol.dataset.ministry, 10);
+          var aslot2 = ac.closest('.slot');
+          var aidx2 = parseInt(aslot2.dataset.slotIndex, 10);
+          var acard = game.view(0).me.board[am2] && game.view(0).me.board[am2][aidx2];
+          if (acard && acard.uid === 'auctioneer' && !acard.actionUsed) {
+            tapRecord = { kind: 'auctioneer', ministry: am2, slot: aidx2, x: e.clientX, y: e.clientY };
+          }
+        }
+      }
+      if (pendingAction) {
+        var ht = e.target.closest ? e.target.closest('#player-hand .card.face-up') : null;
+        if (ht) {
+          tapRecord = { kind: 'hand', handIndex: parseInt(ht.dataset.handIndex, 10), x: e.clientX, y: e.clientY };
+          return; // no drag while an action is armed: tap the hand card to discard it
+        }
       }
       // long-press zoom is armed by the capture-phase handler above
       var t = e.target.closest('#player-hand .card.face-up');
@@ -1760,25 +1762,17 @@
       var under = document.elementFromPoint(e.clientX, e.clientY);
       drag.ghost.style.display = '';
       var col = under && under.closest ? under.closest('.column') : null;
-      var ds = under && under.closest ? under.closest('#discard-slot') : null;
-      if (ds) {
-        if (!drag.view.me.discardUsed) {
-          ds.classList.add('drop-ok');
-          drag.target = { type: 'discard' };
-        } else {
-          drag.target = null;
-        }
-      } else if (drag.card.type === 'equip') {
+      if (drag.card.type === 'item') {
         var ael = under && under.closest ? under.closest('.column .slot .card.face-up') : null;
         if (ael) {
           var am = parseInt(ael.closest('.column').dataset.ministry, 10);
           var aslot = ael.closest('.slot');
           var aidx = parseInt(aslot.dataset.slotIndex, 10);
           var aok = drag.legal.some(function (a) {
-            return a.kind === 'equip' && a.handIndex === drag.index && a.ministry === am && a.slot === aidx;
+            return a.kind === 'item' && a.handIndex === drag.index && a.ministry === am && a.slot === aidx;
           });
           ael.classList.add(aok ? 'drop-ok-card' : 'drop-full-card');
-          drag.target = aok ? { type: 'equip', m: am, idx: aidx } : null;
+          drag.target = aok ? { type: 'item', m: am, idx: aidx } : null;
         } else {
           drag.target = null;
         }
@@ -1798,18 +1792,8 @@
     function endDrag(commit) {
       if (!drag) return;
       if (commit && drag.target) {
-        if (drag.target.type === 'discard') {
-          if (drag.card.type === 'item' && drag.card.uid === 'dragon-pearl' &&
-              drag.view.me.board.some(function (arr) { return arr.length > 0; })) {
-            // The Pearl's return target is picked next; the sell itself applies
-            // once the target is tapped (or is cancelled, without the return).
-            pendingTarget = { kind: 'return', handIndex: drag.index };
-            toast('Dragon Pearl: tap one of your agents to return it');
-          } else {
-            toastEvents(game.apply(0, { kind: 'sell', handIndex: drag.index }));
-          }
-        } else if (drag.target.type === 'equip') {
-          toastEvents(game.apply(0, { kind: 'equip', handIndex: drag.index, ministry: drag.target.m, slot: drag.target.idx }));
+        if (drag.target.type === 'item') {
+          toastEvents(game.apply(0, { kind: 'item', handIndex: drag.index, ministry: drag.target.m, slot: drag.target.idx }));
         } else {
           var pm = drag.target.m;
           if (drag.card.type === 'agent' && (drag.card.uid === 'poisoner' || drag.card.uid === 'grand-spymaster')) {
@@ -1838,13 +1822,35 @@
       render();
     }
 
-    document.addEventListener('pointerup', function () {
+    document.addEventListener('pointerup', function (e) {
       cancelZoomPress();
+      var tap = tapRecord; tapRecord = null;
       if (zoomOpen) { hideZoom(); return; }
+      if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) <= 12 && game && !revealing) {
+        if (tap.kind === 'auctioneer') {
+          if (pendingAction && pendingAction.ministry === tap.ministry && pendingAction.slot === tap.slot) {
+            pendingAction = null;
+            toast('Auctioneer action cancelled');
+          } else {
+            pendingAction = { ministry: tap.ministry, slot: tap.slot };
+            toast('Auctioneer: tap a card in your hand to discard it for +2 coins');
+          }
+          render();
+          return;
+        }
+        if (tap.kind === 'hand' && pendingAction) {
+          var act = { kind: 'action', handIndex: tap.handIndex, ministry: pendingAction.ministry, slot: pendingAction.slot };
+          pendingAction = null;
+          toastEvents(game.apply(0, act));
+          render();
+          return;
+        }
+      }
       endDrag(true);
     });
     document.addEventListener('pointercancel', function () {
       cancelZoomPress();
+      tapRecord = null;
       if (zoomOpen) { hideZoom(); return; }
       endDrag(false);
     });
@@ -1854,12 +1860,9 @@
       if (game.view(0).gameOver) { newGame(); return; } // dismissed modal: same as New Game
       // A targeting prompt left open resolves as a fizzle, as before: the
       // card was already committed, only its effect is dropped.
+      pendingAction = null; // an unused Auctioneer action is simply dropped
       if (pendingTarget) {
-        if (pendingTarget.kind === 'return') {
-          toastEvents(game.apply(0, { kind: 'sell', handIndex: pendingTarget.handIndex }));
-        } else {
-          toastEvents(game.apply(0, { kind: 'play', handIndex: pendingTarget.handIndex, ministry: pendingTarget.ministry }));
-        }
+        toastEvents(game.apply(0, { kind: 'play', handIndex: pendingTarget.handIndex, ministry: pendingTarget.ministry }));
         pendingTarget = null;
       }
       revealing = true;

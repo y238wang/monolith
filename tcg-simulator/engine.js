@@ -25,12 +25,16 @@
  *
  * Actions are plain data (JSON-able). Targets ride inside the action:
  *   { kind: 'play', handIndex, ministry, target?: { ministry, slot } }
- *   { kind: 'equip', handIndex, ministry, slot }
- *   { kind: 'sell', handIndex, target?: { ministry, slot } }  // Dragon Pearl return
+ *   { kind: 'item', handIndex, ministry, slot }
+ *   { kind: 'action', handIndex, ministry, slot }  // Auctioneer: discard hand[handIndex] for 2 coins
  *   { kind: 'submit' }
- * A targeting card (Poisoner, Grand Spymaster, Dragon Pearl) may always be
- * played/sold WITHOUT a target — the ability then fizzles, exactly as when
- * the player cancels targeting in the UI.
+ * A targeting card (Poisoner, Grand Spymaster) may always be played
+ * WITHOUT a target — the ability then fizzles, exactly as when the player
+ * cancels targeting in the UI.
+ * Death check: at the end of a turn, after both players' plays are
+ * resolved, agents at 0 or lower total power are removed to discard
+ * (with their item), cascading until none remain, before the next
+ * round or the final scoring.
  *
  * Events are the engine's only output channel. The page turns them into
  * toasts; the simulator logs them. Round-start events (taxHit, smokeHit,
@@ -64,7 +68,7 @@
     { uid: 'trade-magnate', name: 'Guildmaster', type: 'agent', cost: 6, power: 9, ministry: 1, rarity: 'C', text: '' },
     { uid: 'treasurer', name: 'Treasurer', type: 'agent', cost: 4, power: 5, ministry: 1, rarity: 'U', text: 'On play: +1 income.' },
     { uid: 'smuggler', name: 'Smuggler', type: 'agent', cost: 2, power: 2, ministry: 1, rarity: 'U', text: 'On play: draw a card.' },
-    { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 4, ministry: 1, rarity: 'U', text: 'Whenever you discard a card, gain 1 extra coin.' },
+    { uid: 'auctioneer', name: 'Auctioneer', type: 'agent', cost: 3, power: 4, ministry: 1, rarity: 'U', text: 'Action: discard a card from your hand: gain 2 coins.' },
     { uid: 'grand-treasurer', name: 'Grand Treasurer', type: 'agent', cost: 6, power: 7, ministry: 1, rarity: 'R', text: 'On play: +3 income.' },
     // Intrigue agents (11)
     { uid: 'informant', name: 'Informant', type: 'agent', cost: 2, power: 3, ministry: 2, rarity: 'C', text: '' },
@@ -87,21 +91,23 @@
     { uid: 'sage', name: 'Sage', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'C', text: '' },
     { uid: 'diplomat', name: 'Diplomat', type: 'agent', cost: 3, power: 2, ministry: null, rarity: 'U', text: 'On play: gain 1 coin and draw a card.' },
     { uid: 'imperial-arbiter', name: 'Imperial Arbiter', type: 'agent', cost: 6, power: 6, ministry: null, rarity: 'R', text: 'You win tied ministries.' },
-    // Items (5)
-    { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: gain 1 extra coin for each agent in your Commerce.' },
-    { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: null, power: null, ministry: null, rarity: 'C', text: 'When discarded: opponent loses 1 coin for each agent in your Military at the start of your next turn.' },
-    { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: draw a card.' },
-    { uid: 'abacus', name: 'Abacus', type: 'item', cost: null, power: null, ministry: null, rarity: 'U', text: 'When discarded: +1 income if you have an agent in Commerce.' },
-    { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: null, power: null, ministry: null, rarity: 'R', text: 'When discarded: return an agent to your hand, gain its cost in coins.' },
-    // Equips (8)
-    { uid: 'iron-arms', name: 'Iron Bracers', type: 'equip', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-    { uid: 'merchants-scale', name: "Merchant's Scale", type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-    { uid: 'concealed-blade', name: 'Concealed Blade', type: 'equip', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
-    { uid: 'travelers-pack', name: "Traveler's Pack", type: 'equip', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +3 power.', attachPower: 3 },
-    { uid: 'tiger-armor', name: 'Tiger Armor', type: 'equip', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +4 power. The tax amount is +1.', attachPower: 4 },
-    { uid: 'war-chest', name: 'War Chest', type: 'equip', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +1 power.', attachPower: 1, coinOnAttach: 3 },
-    { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'equip', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +4 power.', attachPower: 4, drawOnAttach: 1 },
-    { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'equip', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is equipped, players cannot play agents on the equipped agent\'s ministry (starting next turn).', attachPower: 3 }
+    // Items (13): the old Equip type is merged into Item. One item per
+    // agent, played onto an own agent with no item yet. On-attach is the
+    // default timing; Abacus is the while-attached exception, and the
+    // Smoke Bomb discards itself at the start of the next turn.
+    { uid: 'coin-pouch', name: 'Coin Pouch', type: 'item', cost: 0, power: null, ministry: 1, rarity: 'C', text: 'When attached: gain 2 coins.', coinOnAttach: 2 },
+    { uid: 'smoke-bomb', name: 'Smoke Bomb', type: 'item', cost: 1, power: null, ministry: 0, rarity: 'C', text: 'At the start of your next turn, after income: discard this item. Opponent loses 1 coin.' },
+    { uid: 'sealed-letter', name: 'Sealed Letter', type: 'item', cost: 1, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card.', drawOnAttach: 1 },
+    { uid: 'abacus', name: 'Abacus', type: 'item', cost: 1, power: null, ministry: 1, rarity: 'U', text: 'While attached: +1 income.', incomeBonus: 1 },
+    { uid: 'dragon-pearl', name: 'Dragon Pearl', type: 'item', cost: 3, power: null, ministry: null, rarity: 'R', text: '+X power, where X is the number of your agents on the field.', isPearl: true },
+    { uid: 'iron-arms', name: 'Iron Bracers', type: 'item', cost: 2, power: null, ministry: 0, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+    { uid: 'merchants-scale', name: "Merchant's Scale", type: 'item', cost: 2, power: null, ministry: 1, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+    { uid: 'concealed-blade', name: 'Concealed Blade', type: 'item', cost: 2, power: null, ministry: 2, rarity: 'C', text: 'Attached agent gets +4 power.', attachPower: 4 },
+    { uid: 'travelers-pack', name: "Traveler's Pack", type: 'item', cost: 2, power: null, ministry: null, rarity: 'C', text: 'Attached agent gets +3 power.', attachPower: 3 },
+    { uid: 'tiger-armor', name: 'Tiger Armor', type: 'item', cost: 3, power: null, ministry: 0, rarity: 'U', text: 'Attached agent gets +4 power. The tax amount is +1.', attachPower: 4 },
+    { uid: 'war-chest', name: 'War Chest', type: 'item', cost: 2, power: null, ministry: 1, rarity: 'U', text: 'When attached: gain 3 coins. Attached agent gets +1 power.', attachPower: 1, coinOnAttach: 3 },
+    { uid: 'shadow-cloak', name: 'Shadow Cloak', type: 'item', cost: 3, power: null, ministry: 2, rarity: 'U', text: 'When attached: draw a card. Attached agent gets +4 power.', attachPower: 4, drawOnAttach: 1 },
+    { uid: 'dragon-regalia', name: 'Dragon Regalia', type: 'item', cost: 4, power: null, ministry: null, rarity: 'R', text: 'Attached agent gets +3 power. As long as this is attached, players cannot play agents on the attached agent\'s ministry (starting next turn).', attachPower: 3 }
   ];
   var cardDef = {};
   SET1.forEach(function (t) { cardDef[t.uid] = t; });
@@ -135,19 +141,35 @@
       cost: t.cost, power: t.power, ministry: t.ministry,
       rarity: t.rarity, text: t.text
     };
-    if (t.type === 'agent') c.equips = [];
-    if (t.type === 'equip') {
+    if (t.type === 'agent') { c.item = null; c.actionUsed = false; }
+    if (t.type === 'item') {
       c.attachPower = t.attachPower || 0;
       c.coinOnAttach = t.coinOnAttach || 0;
       c.drawOnAttach = t.drawOnAttach || 0;
+      c.incomeBonus = t.incomeBonus || 0;
+      c.isPearl = !!t.isPearl;
+      c.smokeArmed = false;
     }
     return c;
   }
 
   function agentPower(c) {
     var p = c.power || 0;
-    (c.equips || []).forEach(function (e) { p += e.attachPower || 0; });
+    if (c.item) p += c.item.attachPower || 0;
     if (c.powerDelta) p += c.powerDelta;
+    return p;
+  }
+
+  // Total power of one agent in its ministry, including the Drillmaster
+  // and Provisioner auras. This is the value the death check uses.
+  function totalAgentPower(board, m, c) {
+    var p = agentPower(c);
+    if (c.uid === 'veteran-sergeant') p += 2 * (board[m].length - 1);
+    if (m === 0) {
+      var prov = 0;
+      board[m].forEach(function (x) { if (x.uid === 'quartermaster') prov += 1; });
+      p += 2 * (prov - (c.uid === 'quartermaster' ? 1 : 0));
+    }
     return p;
   }
 
@@ -173,7 +195,15 @@
     board[0].forEach(function (c) {
       if (c.uid === 'tax-collector') n += 1;
       if (c.uid === 'grand-marshal') n += 2;
-      (c.equips || []).forEach(function (e) { if (e.uid === 'tiger-armor') n += 1; });
+      if (c.item && c.item.uid === 'tiger-armor') n += 1;
+    });
+    return n;
+  }
+
+  function abacusCount(board) {
+    var n = 0;
+    board.forEach(function (arr) {
+      arr.forEach(function (c) { if (c.item && c.item.uid === 'abacus') n += 1; });
     });
     return n;
   }
@@ -198,7 +228,7 @@
   function copyCard(c) {
     var o = {};
     for (var k in c) {
-      if (k === 'equips') o.equips = c.equips ? c.equips.slice() : c.equips;
+      if (k === 'item') o.item = c.item ? Object.assign({}, c.item) : null;
       else o[k] = c[k];
     }
     return o;
@@ -233,8 +263,8 @@
       return {
         deck: shuffled(uids), hand: [], board: [[], [], []],
         baseIncome: 1, income: 1, coins: 1,
-        discards: [], discardUsed: false,
-        pendingTax: 0, pendingSmoke: false, pendingDiscards: 0
+        discards: [],
+        pendingTax: 0, pendingDiscards: 0
       };
     }
     var players = [newPlayer(decks[0]), newPlayer(decks[1])];
@@ -243,33 +273,72 @@
     function drawCard(P) { if (P.deck.length > 0) P.hand.push(P.deck.pop()); }
     for (var i = 0; i < STARTING_HAND; i++) { drawCard(players[0]); drawCard(players[1]); }
 
-    function sync(P) { P.income = P.baseIncome + (hasBonus(P.board, 1) ? 1 : 0); }
-    function syncAll() { sync(players[0]); sync(players[1]); }
+    // Dragon Pearl power is dynamic: +X where X is the controller's
+    // agent count, including the host. Recompute it whenever boards
+    // change, so agentPower / ministryPower always see the current X.
+    function refreshItems() {
+      players.forEach(function (P) {
+        var count = 0;
+        P.board.forEach(function (arr) { count += arr.length; });
+        P.board.forEach(function (arr) {
+          arr.forEach(function (c) {
+            if (c.item && c.item.isPearl) c.item.attachPower = count;
+          });
+        });
+      });
+    }
 
-    // Regalia lock: bites only from the turn AFTER the equip (turns are
-    // simultaneous, so the opponent still gets to play into the ministry
-    // during the turn the Regalia hits the board).
+    function sync(P) {
+      P.income = P.baseIncome + (hasBonus(P.board, 1) ? 1 : 0) + abacusCount(P.board);
+    }
+    function syncAll() { refreshItems(); sync(players[0]); sync(players[1]); }
+
+    // Regalia lock: bites only from the turn AFTER the item attaches
+    // (turns are simultaneous, so the opponent still gets to play into
+    // the ministry during the turn the Regalia hits the board).
     function locked(m) {
       for (var b = 0; b < 2; b++) {
         for (var j = 0; j < players[b].board[m].length; j++) {
-          var eqs = players[b].board[m][j].equips || [];
-          for (var k = 0; k < eqs.length; k++) {
-            if (eqs[k].uid === 'dragon-regalia' &&
-                (eqs[k]._lockedFrom === undefined || eqs[k]._lockedFrom < turn)) return true;
-          }
+          var it = players[b].board[m][j].item;
+          if (it && it.uid === 'dragon-regalia' &&
+              (it._lockedFrom === undefined || it._lockedFrom < turn)) return true;
         }
       }
       return false;
     }
 
-    function sellVal(P) {
-      var n = 1;
-      for (var m = 0; m < 3; m++) {
-        for (var j = 0; j < P.board[m].length; j++) {
-          if (P.board[m][j].uid === 'auctioneer') n += 1;
-        }
+    // End-of-turn death check: remove every agent at 0 or lower total
+    // power, with its item, to its owner's discard pile. Removing one
+    // agent can drop another (auras, Pearl count), so repeat until none
+    // remain. Runs once per turn, in submit(1), before the next round
+    // or the final scoring — never mid-turn, so a Poisoned agent stays
+    // on the board, visible, until the turn is revealed.
+    function deathCheck(evts) {
+      for (;;) {
+        refreshItems();
+        var dead = [];
+        players.forEach(function (P, pi) {
+          P.board.forEach(function (arr, m) {
+            arr.forEach(function (c, si) {
+              if (totalAgentPower(P.board, m, c) <= 0) dead.push({ pi: pi, m: m, si: si, card: c });
+            });
+          });
+        });
+        if (dead.length === 0) break;
+        // Remove highest slot first within each ministry so indices in
+        // the same ministry stay valid as we splice.
+        dead.sort(function (a, b) { return (a.pi - b.pi) || (a.m - b.m) || (b.si - a.si); });
+        dead.forEach(function (d) {
+          var P = players[d.pi];
+          var removed = P.board[d.m].splice(d.si, 1)[0];
+          P.discards.push(removed);
+          var item = removed.item;
+          removed.item = null;
+          if (item) P.discards.push(item);
+          evts.push({ type: 'removed', player: d.pi, card: removed.uid, cardName: removed.name, ministry: d.m, item: item ? item.uid : null });
+        });
+        syncAll();
       }
-      return n;
     }
 
     function onPlayEffects(P, card, evts) {
@@ -313,6 +382,17 @@
           var hadBonus = hasBonus(foe.board, tm);
           var stolen = foe.board[tm].splice(ti, 1)[0];
           me.board[tm].push(stolen);
+          stolen.actionUsed = false; // a stolen agent is a fresh play for its new controller
+          // Stealing counts as playing the agent for income bonuses:
+          // Treasurer / Grand Treasurer income moves to the stealer and
+          // leaves the original player. One-time coin/draw/delayed
+          // effects do NOT re-fire on a steal.
+          var incAmt = stolen.uid === 'treasurer' ? 1 : stolen.uid === 'grand-treasurer' ? 3 : 0;
+          if (incAmt > 0) {
+            foe.baseIncome = Math.max(1, foe.baseIncome - incAmt);
+            me.baseIncome += incAmt;
+            evts.push({ type: 'incomeTransfer', player: P, victim: 1 - P, amount: incAmt, source: stolen.uid });
+          }
           evts.push({ type: 'steal', player: P, target: { ministry: tm, slot: ti } });
           if (me.board[tm].length === 2) evts.push({ type: 'bonus', player: P, ministry: tm });
           if (hadBonus && !hasBonus(foe.board, tm)) evts.push({ type: 'bonusLost', victim: 1 - P, ministry: tm });
@@ -322,76 +402,45 @@
       return evts;
     }
 
-    function applyEquip(P, action, evts) {
+    function applyItem(P, action, evts) {
       var me = players[P];
-      var eq = me.hand.splice(action.handIndex, 1)[0];
-      me.coins -= eq.cost;
+      var it = me.hand.splice(action.handIndex, 1)[0];
+      me.coins -= it.cost;
       var ag = me.board[action.ministry][action.slot];
-      ag.equips.push(eq);
-      if (eq.uid === 'dragon-regalia') eq._lockedFrom = turn;
-      evts.push({ type: 'equip', player: P, card: eq.uid, ministry: action.ministry, slot: action.slot });
-      if (eq.coinOnAttach) {
-        me.coins += eq.coinOnAttach;
-        evts.push({ type: 'coin', player: P, amount: eq.coinOnAttach, source: 'war-chest' });
+      ag.item = it;
+      if (it.uid === 'dragon-regalia') it._lockedFrom = turn;
+      if (it.uid === 'smoke-bomb') it.smokeArmed = true;
+      evts.push({ type: 'item', player: P, card: it.uid, ministry: action.ministry, slot: action.slot });
+      if (it.coinOnAttach) {
+        me.coins += it.coinOnAttach;
+        evts.push({ type: 'coin', player: P, amount: it.coinOnAttach, source: it.uid });
       }
-      if (eq.drawOnAttach) {
+      if (it.drawOnAttach) {
         drawCard(me);
-        evts.push({ type: 'draw', player: P, count: 1, source: 'shadow-cloak' });
+        evts.push({ type: 'draw', player: P, count: 1, source: it.uid });
+      }
+      if (it.uid === 'abacus') {
+        evts.push({ type: 'income', player: P, amount: 1, source: 'abacus' });
+      }
+      if (it.uid === 'smoke-bomb') {
+        evts.push({ type: 'smokeArmed', player: P });
       }
       syncAll();
       return evts;
     }
 
-    function itemFx(P, card, target, evts) {
+    // Auctioneer action ability: once per turn per Auctioneer, discard a
+    // hand card to gain 2 coins. The discarded card goes to the discard
+    // pile and triggers nothing.
+    function applyAction(P, action, evts) {
       var me = players[P];
-      switch (card.uid) {
-        case 'coin-pouch': {
-          var n = me.board[1].length;
-          me.coins += n;
-          evts.push({ type: 'coin', player: P, amount: n, source: 'coin-pouch' });
-          break;
-        }
-        case 'smoke-bomb':
-          me.pendingSmoke = true;
-          evts.push({ type: 'delayedSmoke', player: P });
-          break;
-        case 'sealed-letter':
-          drawCard(me);
-          evts.push({ type: 'draw', player: P, count: 1, source: 'sealed-letter' });
-          break;
-        case 'abacus':
-          if (me.board[1].length > 0) {
-            me.baseIncome += 1; sync(me);
-            evts.push({ type: 'income', player: P, amount: 1, source: 'abacus' });
-          } else {
-            evts.push({ type: 'noEffect', player: P, source: 'abacus' });
-          }
-          break;
-        case 'dragon-pearl': {
-          if (!target) { evts.push({ type: 'noEffect', player: P, source: 'dragon-pearl' }); break; }
-          var m = target.ministry, idx = target.slot;
-          var had = hasBonus(me.board, m);
-          var tgt = me.board[m].splice(idx, 1)[0];
-          tgt.equips = [];
-          tgt.powerDelta = 0;
-          me.hand.push(tgt);
-          me.coins += tgt.cost;
-          sync(me);
-          if (had && !hasBonus(me.board, m)) evts.push({ type: 'bonusLost', victim: P, ministry: m });
-          evts.push({ type: 'return', player: P, card: tgt.uid, cardName: tgt.name, coins: tgt.cost });
-          break;
-        }
-      }
-    }
-
-    function applySell(P, action, evts) {
-      var me = players[P];
+      var ag = me.board[action.ministry][action.slot];
       var card = me.hand.splice(action.handIndex, 1)[0];
       me.discards.push(card);
-      me.coins += sellVal(me);
-      me.discardUsed = true;
-      evts.push({ type: 'sell', player: P, card: card.uid });
-      if (card.type === 'item') itemFx(P, card, action.target, evts);
+      me.coins += 2;
+      ag.actionUsed = true;
+      evts.push({ type: 'action', player: P, card: 'auctioneer', discarded: card.uid, discardedName: card.name, ministry: action.ministry, slot: action.slot });
+      evts.push({ type: 'coin', player: P, amount: 2, source: 'auctioneer' });
       syncAll();
       return evts;
     }
@@ -428,28 +477,25 @@
         }
       });
       me.hand.forEach(function (card, hi) {
-        if (card.type !== 'equip' || card.cost > me.coins) return;
+        if (card.type !== 'item' || card.cost > me.coins) return;
         for (var m = 0; m < 3; m++) {
           if (card.ministry !== null && card.ministry !== undefined && card.ministry !== m) continue;
           me.board[m].forEach(function (ag, si) {
-            acts.push({ kind: 'equip', handIndex: hi, ministry: m, slot: si });
+            if (ag.item) return; // one item per agent
+            acts.push({ kind: 'item', handIndex: hi, ministry: m, slot: si });
           });
         }
       });
-      if (!me.discardUsed) {
-        me.hand.forEach(function (card, hi) {
-          if (card.uid === 'dragon-pearl') {
-            me.board.forEach(function (arr, m) {
-              arr.forEach(function (ag, si) {
-                acts.push({ kind: 'sell', handIndex: hi, target: { ministry: m, slot: si } });
-              });
-            });
-            acts.push({ kind: 'sell', handIndex: hi });
-          } else {
-            acts.push({ kind: 'sell', handIndex: hi });
-          }
+      // Auctioneer action: once per turn per Auctioneer, discard any
+      // hand card for 2 coins.
+      me.board.forEach(function (arr, m) {
+        arr.forEach(function (ag, si) {
+          if (ag.uid !== 'auctioneer' || ag.actionUsed) return;
+          me.hand.forEach(function (card, hi) {
+            acts.push({ kind: 'action', handIndex: hi, ministry: m, slot: si });
+          });
         });
-      }
+      });
       acts.push({ kind: 'submit' });
       return acts;
     }
@@ -461,15 +507,22 @@
         activePlayer = 1;
         return [{ type: 'phase', player: 1 }];
       }
+      // End of turn: death check first, after all of both players'
+      // effects have resolved, before the next round or final scoring.
+      var deathEvts = [];
+      deathCheck(deathEvts);
       // Player 1's submit: turn 6 ends the game, otherwise the next round starts.
       if (turn >= MAX_TURNS) {
         gameOver = true;
-        return [{ type: 'gameOver', result: computeResult() }];
+        return deathEvts.concat([{ type: 'gameOver', result: computeResult() }]);
       }
       turn += 1;
-      players[0].discardUsed = false;
-      players[1].discardUsed = false;
-      var evts = [{ type: 'roundStart', round: turn }];
+      players.forEach(function (P) {
+        P.board.forEach(function (arr) {
+          arr.forEach(function (c) { c.actionUsed = false; });
+        });
+      });
+      var evts = deathEvts.concat([{ type: 'roundStart', round: turn }]);
       // income phase: base +1, effective income (base + Commerce bonus), coins refill
       players[0].baseIncome += 1;
       players[1].baseIncome += 1;
@@ -485,15 +538,27 @@
           if (amt > 0) evts.push({ type: 'taxHit', victim: 1 - q, amount: amt });
         }
       }
-      // delayed smoke bombs: -1 coin per the actor's Military agents, counted now
-      for (var s = 0; s < 2; s++) {
-        if (players[s].pendingSmoke) {
-          var ps = Math.min(players[s].board[0].length, players[1 - s].coins);
-          players[1 - s].coins -= ps;
-          players[s].pendingSmoke = false;
-          if (ps > 0) evts.push({ type: 'smokeHit', victim: 1 - s, amount: ps });
-        }
-      }
+      // Smoke Bombs: at the start of the turn, after income, each armed
+      // Smoke Bomb is discarded from its host and its controller's
+      // opponent loses 1 coin (capped at 0). A Bomb removed before
+      // this point — death check, or its host leaving the board — never
+      // fires. A stolen Bomb fires against its new controller's
+      // opponent, i.e. the effect reverses with the steal.
+      players.forEach(function (P, pi) {
+        P.board.forEach(function (arr) {
+          arr.forEach(function (ag) {
+            if (ag.item && ag.item.uid === 'smoke-bomb' && ag.item.smokeArmed) {
+              var bomb = ag.item;
+              ag.item = null;
+              P.discards.push(bomb);
+              var amt = Math.min(1, players[1 - pi].coins);
+              players[1 - pi].coins -= amt;
+              if (amt > 0) evts.push({ type: 'smokeHit', victim: 1 - pi, amount: amt });
+            }
+          });
+        });
+      });
+      syncAll();
       // tax phase: the side with the weaker Military loses `tax` coins
       // (denial-only: the stronger side gains nothing). Tie loses nothing.
       var tax = taxLevel(players[0].board, players[1].board);
@@ -548,8 +613,8 @@
       if (!ok) throw new Error('illegal action: ' + JSON.stringify(action));
       var evts = [];
       if (action.kind === 'play') return applyPlay(P, action, evts);
-      if (action.kind === 'equip') return applyEquip(P, action, evts);
-      if (action.kind === 'sell') return applySell(P, action, evts);
+      if (action.kind === 'item') return applyItem(P, action, evts);
+      if (action.kind === 'action') return applyAction(P, action, evts);
       throw new Error('unknown action kind: ' + action.kind);
     }
 
@@ -584,8 +649,7 @@
         me: {
           hand: me.hand.map(copyCard), deckCount: me.deck.length,
           board: copyBoard(me.board), income: me.income, coins: me.coins,
-          discards: me.discards.map(copyCard), discardUsed: me.discardUsed,
-          sellValue: sellVal(me)
+          discards: me.discards.map(copyCard)
         },
         opp: {
           handCount: foe.hand.length, deckCount: foe.deck.length,
@@ -602,8 +666,8 @@
           return {
             hand: P.hand, deck: P.deck, board: P.board,
             baseIncome: P.baseIncome, income: P.income, coins: P.coins,
-            discards: P.discards, discardUsed: P.discardUsed,
-            pendingTax: P.pendingTax, pendingSmoke: P.pendingSmoke,
+            discards: P.discards,
+            pendingTax: P.pendingTax,
             pendingDiscards: P.pendingDiscards
           };
         })
@@ -617,8 +681,8 @@
         var s = snap.players[i], P = players[i];
         P.hand = s.hand; P.deck = s.deck; P.board = s.board;
         P.baseIncome = s.baseIncome; P.income = s.income; P.coins = s.coins;
-        P.discards = s.discards; P.discardUsed = s.discardUsed;
-        P.pendingTax = s.pendingTax; P.pendingSmoke = s.pendingSmoke;
+        P.discards = s.discards;
+        P.pendingTax = s.pendingTax;
         P.pendingDiscards = s.pendingDiscards;
       }
       var maxId = 0;
@@ -629,7 +693,7 @@
         P.board.forEach(function (arr) {
           arr.forEach(function (c) {
             if (c.id > maxId) maxId = c.id;
-            (c.equips || []).forEach(function (e) { if (e.id > maxId) maxId = e.id; });
+            if (c.item && c.item.id > maxId) maxId = c.item.id;
           });
         });
       });
@@ -652,14 +716,15 @@
   }
 
   // ---------- greedy policy (the current AI, as a view -> action function) ----------
-  // Decision rule: first consider a simple sell (see below), then play the
-  // affordable agent with the highest cost (then power) to the best-scored
-  // valid column, then attach the affordable equip with the highest cost.
-  // Poisoner weakens the opponent's strongest agent; Grand Spymaster steals
-  // the strongest agent it has room for; Regalia locks the ministry where
-  // its lead is largest. Returns { kind: 'submit' } when nothing is
-  // playable. Uses ONLY the view. Deterministic: rng is kept for API
-  // compatibility but no longer drives placement.
+  // Decision rule: first consider an Auctioneer action to afford a play,
+  // then play the affordable agent with the highest cost (then power) to
+  // the best-scored valid column, then attach the affordable item with
+  // the highest value. Poisoner weakens the opponent's strongest agent;
+  // Grand Spymaster steals the strongest agent it has room for; Regalia
+  // locks the ministry where its lead is largest. Returns
+  // { kind: 'submit' } when nothing is playable. Uses ONLY the view.
+  // Deterministic: rng is kept for API compatibility but no longer
+  // drives placement.
   function greedyPolicy(view, rng) {
     rng = rng || Math.random;
     var me = view.me, foe = view.opp;
@@ -673,12 +738,27 @@
       }
       return cols;
     }
-    // Keep-value of a hand card, for choosing sell fodder: low = sellable.
-    // Ability cards and Auctioneer are protected; ministry-dead cards are
-    // cheapest; Dragon Pearl is never affordability fodder (its targeted
-    // return is handled separately, and is left inert in this simple pass).
+    function hasItemTarget(card) {
+      for (var mm = 0; mm < 3; mm++) {
+        if (card.ministry !== null && card.ministry !== undefined && card.ministry !== mm) continue;
+        for (var si = 0; si < me.board[mm].length; si++) {
+          if (!me.board[mm][si].item) return true;
+        }
+      }
+      return false;
+    }
+    function itemValue(c) {
+      if (view.turn >= MAX_TURNS && (c.uid === 'smoke-bomb' || c.uid === 'abacus')) return -1;
+      var v = c.attachPower || 0;
+      v += c.coinOnAttach || 0;
+      if (c.drawOnAttach) v += 3;
+      if (c.uid === 'abacus') v += 3;
+      if (c.uid === 'smoke-bomb') v += 2;
+      return v;
+    }
+    // Keep-value of a hand card, for choosing Auctioneer-action fodder:
+    // low = discardable. Ability cards and Auctioneer are protected.
     function keepScore(c) {
-      if (c.uid === 'dragon-pearl') return 999;
       if (c.type === 'agent') {
         var s = c.power || 0;
         if (['treasurer', 'grand-treasurer', 'broker', 'moneylender', 'diplomat',
@@ -690,14 +770,7 @@
             (me.board[c.ministry].length >= MAX_PER_MINISTRY || view.locked[c.ministry])) s = -10;
         return s;
       }
-      if (c.type === 'equip') return c.attachPower || 0;
-      if (c.type === 'item') {
-        if (c.uid === 'coin-pouch') return me.board[1].length > 0 ? 5 : 0;
-        if (c.uid === 'abacus') return me.board[1].length > 0 ? 5 : 0;
-        if (c.uid === 'smoke-bomb') return me.board[0].length > 0 ? 5 : 0;
-        if (c.uid === 'sealed-letter') return me.deckCount > 0 ? 5 : 0;
-        return 2;
-      }
+      if (c.type === 'item') return itemValue(c);
       return 0;
     }
     // Score a ministry for placing `card`: flipping to a lead beats closing
@@ -728,35 +801,30 @@
       });
       return bestM;
     }
-    // ---- simple sell logic (once per turn; coins do not carry over, so a
-    // sell is only worth it if its coins get spent this turn, or the sold
-    // Item's trigger is itself the payoff). Runs before playing, because
-    // the policy loop re-runs after the sell and then plays with the new
-    // coin total. Dragon Pearl sells are left out of this pass.
-    if (!me.discardUsed) {
-      var sellValue = me.sellValue;
+    // ---- Auctioneer action (once per turn per Auctioneer; coins do not
+    // carry over, so an action is only worth it if its 2 coins get spent
+    // this turn). Runs before playing, because the policy loop re-runs
+    // after the action and then plays with the new coin total.
+    var auctioneer = null;
+    me.board.forEach(function (arr, m) {
+      arr.forEach(function (ag, si) {
+        if (!auctioneer && ag.uid === 'auctioneer' && !ag.actionUsed) {
+          auctioneer = { ministry: m, slot: si };
+        }
+      });
+    });
+    if (auctioneer && me.hand.length > 0) {
       var affordableExists = false;
       me.hand.forEach(function (c) {
         if (c.type === 'agent' && c.cost <= me.coins && validCols(c, me.board).length > 0) affordableExists = true;
-        if (c.type === 'equip' && c.cost <= me.coins) {
-          for (var mm = 0; mm < 3; mm++) {
-            if (c.ministry !== null && c.ministry !== undefined && c.ministry !== mm) continue;
-            if (me.board[mm].length > 0) affordableExists = true;
-          }
-        }
+        if (c.type === 'item' && c.cost <= me.coins && hasItemTarget(c)) affordableExists = true;
       });
-      // A play/equip that is unaffordable now but affordable after a sell.
       var bestUnaff = null, bestUnaffHi = -1, bestUnaffPow = -Infinity;
       me.hand.forEach(function (c, hi) {
-        if (c.cost === null || c.cost === undefined || c.cost <= me.coins || c.cost > me.coins + sellValue) return;
+        if (c.cost === null || c.cost === undefined || c.cost <= me.coins || c.cost > me.coins + 2) return;
         var ok = false, pow = 0;
         if (c.type === 'agent' && validCols(c, me.board).length > 0) { ok = true; pow = c.power || 0; }
-        if (c.type === 'equip') {
-          for (var mm = 0; mm < 3; mm++) {
-            if (c.ministry !== null && c.ministry !== undefined && c.ministry !== mm) continue;
-            if (me.board[mm].length > 0) { ok = true; pow = c.attachPower || 0; }
-          }
-        }
+        if (c.type === 'item' && hasItemTarget(c)) { ok = true; pow = itemValue(c); }
         if (ok && (!bestUnaff || c.cost > bestUnaff.cost ||
             (c.cost === bestUnaff.cost && pow > bestUnaffPow))) {
           bestUnaff = c; bestUnaffHi = hi; bestUnaffPow = pow;
@@ -769,7 +837,7 @@
           var s = keepScore(c);
           if (s < fodderScore) {
             fodderScore = s; fodderHi = hi;
-            fodderPow = c.type === 'equip' ? (c.attachPower || 0) : (c.power || 0);
+            fodderPow = c.type === 'item' ? itemValue(c) : (c.power || 0);
           }
         });
         if (fodderHi >= 0) {
@@ -777,33 +845,10 @@
             'lookout', 'spy', 'mastermind', 'smuggler', 'tax-collector', 'grand-marshal',
             'sentry', 'raider', 'poisoner', 'grand-spymaster', 'imperial-arbiter',
             'quartermaster', 'veteran-sergeant'].indexOf(bestUnaff.uid) >= 0;
-          // Sell when stuck (no affordable play at all), or when the trade
-          // is clearly uphill: an ability card, or strictly more power.
           if (!affordableExists || isAbility || bestUnaffPow > fodderPow + 1) {
-            return { kind: 'sell', handIndex: fodderHi };
+            return { kind: 'action', handIndex: fodderHi, ministry: auctioneer.ministry, slot: auctioneer.slot };
           }
         }
-      }
-      // No sell-to-afford: if nothing is playable this turn, sell an Item
-      // for its trigger alone. Pearl is skipped (targeted return).
-      if (!affordableExists) {
-        var itemSell = -1;
-        me.hand.forEach(function (c, hi) {
-          if (itemSell >= 0) return;
-          if (c.type !== 'item') return;
-          if (c.uid === 'sealed-letter' && me.deckCount > 0) itemSell = hi;
-          else if (c.uid === 'abacus' && me.board[1].length > 0 && view.turn < MAX_TURNS) itemSell = hi;
-          else if (c.uid === 'smoke-bomb' && me.board[0].length > 0 && view.turn < MAX_TURNS) itemSell = hi;
-          else if (c.uid === 'coin-pouch' && me.board[1].length > 0) {
-            var total = me.coins + sellValue + me.board[1].length;
-            var unlocks = false;
-            me.hand.forEach(function (d) {
-              if (d.cost !== null && d.cost !== undefined && d.cost > me.coins && d.cost <= total) unlocks = true;
-            });
-            if (unlocks) itemSell = hi;
-          }
-        });
-        if (itemSell >= 0) return { kind: 'sell', handIndex: itemSell };
       }
     }
     var bestCard = null, bestHi = -1;
@@ -839,35 +884,50 @@
       }
       return act;
     }
-    var bestEq = null, bestEqHi = -1;
+    var bestItem = null, bestItemHi = -1, bestItemVal = -Infinity;
     me.hand.forEach(function (c, hi) {
-      if (c.type !== 'equip' || c.cost > me.coins) return;
-      var hasTgt = false;
-      for (var mm = 0; mm < 3; mm++) {
-        if (c.ministry !== null && c.ministry !== undefined && c.ministry !== mm) continue;
-        if (me.board[mm].length > 0) { hasTgt = true; break; }
+      if (c.type !== 'item' || c.cost > me.coins) return;
+      if (!hasItemTarget(c)) return;
+      var v = itemValue(c);
+      if (v < 0) return;
+      if (!bestItem || v > bestItemVal || (v === bestItemVal && c.cost > bestItem.cost)) {
+        bestItem = c; bestItemHi = hi; bestItemVal = v;
       }
-      if (!hasTgt) return;
-      if (!bestEq || c.cost > bestEq.cost) { bestEq = c; bestEqHi = hi; }
     });
-    if (bestEq) {
+    if (bestItem) {
       var tgt = null;
-      if (bestEq.uid === 'dragon-regalia') {
+      if (bestItem.uid === 'dragon-regalia') {
         var bestLead = -Infinity;
         me.board.forEach(function (arr, mm) {
-          if (bestEq.ministry !== null && bestEq.ministry !== undefined && bestEq.ministry !== mm) return;
+          if (bestItem.ministry !== null && bestItem.ministry !== undefined && bestItem.ministry !== mm) return;
           arr.forEach(function (ag, si) {
+            if (ag.item) return;
             var lead = ministryPower(me.board, mm) - ministryPower(foe.board, mm);
             if (lead > bestLead) { bestLead = lead; tgt = { ministry: mm, slot: si }; }
           });
         });
+      } else if ((bestItem.attachPower || 0) > 0) {
+        var bestPow = -Infinity;
+        me.board.forEach(function (arr, mm) {
+          if (bestItem.ministry !== null && bestItem.ministry !== undefined && bestItem.ministry !== mm) return;
+          arr.forEach(function (ag, si) {
+            if (ag.item) return;
+            var p = agentPower(ag);
+            if (p > bestPow) { bestPow = p; tgt = { ministry: mm, slot: si }; }
+          });
+        });
       } else {
-        for (var m2 = 0; m2 < 3; m2++) {
-          if (bestEq.ministry !== null && bestEq.ministry !== undefined && bestEq.ministry !== m2) continue;
-          if (me.board[m2].length > 0) { tgt = { ministry: m2, slot: 0 }; break; }
-        }
+        var worstPow = Infinity;
+        me.board.forEach(function (arr, mm) {
+          if (bestItem.ministry !== null && bestItem.ministry !== undefined && bestItem.ministry !== mm) return;
+          arr.forEach(function (ag, si) {
+            if (ag.item) return;
+            var p = agentPower(ag);
+            if (p < worstPow) { worstPow = p; tgt = { ministry: mm, slot: si }; }
+          });
+        });
       }
-      if (tgt) return { kind: 'equip', handIndex: bestEqHi, ministry: tgt.ministry, slot: tgt.slot };
+      if (tgt) return { kind: 'item', handIndex: bestItemHi, ministry: tgt.ministry, slot: tgt.slot };
     }
     return { kind: 'submit' };
   }
