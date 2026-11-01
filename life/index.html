@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life</title>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #fafafa;
+    color: #222;
+  }
+  #age {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  #age-label {
+    font-size: 18px;
+    color: #666;
+    margin-top: -16px;
+  }
+  button {
+    font-size: 20px;
+    padding: 14px 36px;
+    border: none;
+    border-radius: 12px;
+    background: #222;
+    color: #fff;
+    cursor: pointer;
+  }
+  button:active {
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+  <div id="age">0</div>
+  <div id="age-label">Age</div>
+  <button id="age-up" type="button">Age Up</button>
+  <script>
+    let age = 0;
+    const ageEl = document.getElementById('age');
+    document.getElementById('age-up').addEventListener('click', () => {
+      age += 1;
+      ageEl.textContent = age;
+    });
+  </script>
+</body>
+</html>
