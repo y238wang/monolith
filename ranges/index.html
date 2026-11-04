@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ranges — UTG</title>
+<style>
+  :root {
+    --raise: #1e7a3c;
+    --raise-text: #fff;
+    --fold: #efefef;
+    --fold-text: #8a8a8a;
+    --mixed: #fde9a8;
+    --mixed-text: #3a2e00;
+    --ink: #222;
+    --muted: #666;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 12px 28px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #fafafa;
+    color: var(--ink);
+    touch-action: manipulation;
+  }
+  h1 { font-size: 26px; margin: 0; line-height: 1.2; }
+  .subtitle { color: var(--muted); font-size: 15px; text-align: center; margin: -6px 0 0; }
+  .stats { font-size: 15px; text-align: center; }
+  .stats strong { font-weight: 700; }
+  .grid-wrap { width: min(94vw, 520px); }
+  .grid {
+    display: grid;
+    grid-template-columns: 22px repeat(13, 1fr);
+    gap: 2px;
+    width: 100%;
+  }
+  .axis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .cell {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 3px;
+    padding: 0;
+    font: inherit;
+    font-size: 10.5px;
+    line-height: 1.15;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cell small { font-size: 8.5px; font-weight: 700; }
+  .cell.raise { background: var(--raise); color: var(--raise-text); }
+  .cell.fold { background: var(--fold); color: var(--fold-text); }
+  .cell.mixed { background: var(--mixed); color: var(--mixed-text); }
+  .cell.selected { outline: 3px solid #111; outline-offset: -1px; }
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .swatch {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .swatch.raise { background: var(--raise); }
+  .swatch.fold { background: var(--fold); border: 1px solid #ddd; }
+  .swatch.mixed { background: var(--mixed); }
+  #detail {
+    min-height: 22px;
+    font-size: 16px;
+    text-align: center;
+  }
+  .notes {
+    width: min(94vw, 520px);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .notes p { margin: 6px 0; }
+</style>
+</head>
+<body>
+  <h1>UTG</h1>
+  <p class="subtitle">Raise first in &middot; 100bb &middot; 6-max cash</p>
+  <p class="stats" id="stats">Raise <strong>17.2%</strong> &middot; Fold <strong>82.8%</strong> &middot; Raise to 2.5bb</p>
+
+  <div class="grid-wrap">
+    <div class="grid" id="grid" role="grid" aria-label="UTG opening range"></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch raise"></i>Raise</span>
+    <span><i class="swatch mixed"></i>Mixed (% = raise)</span>
+    <span><i class="swatch fold"></i>Fold</span>
+  </div>
+
+  <p id="detail">Tap a hand to see its action.</p>
+
+  <div class="notes">
+    <p><strong>Raise:</strong> 44+, A4s+, KTs+, QTs+, JTs, A8o+, KJo, KQo. Mixed hands are marked with their raise frequency in the grid.</p>
+    <p>First in only — everyone before UTG has folded. No limping. Solver: open-source CFR (preflop-cfr+), no rake. Other solvers differ by a few boundary hands (e.g. 22–33, 98s, T9s) depending on rake and assumptions.</p>
+  </div>
+
+<script>
+  // Raise frequency (%) for each hand. Hands not listed fold 100%.
+  // Source: Tiger Poker UTG first-in solve, 6-max cash, 100bb, raise 2.5bb, no rake.
+  // Pairs 44 (84%) through AA, suited aces A4s (99%) through AKs, KTs+ (K9s 46%),
+  // QTs+ (QTs 99%), JTs (98%), offsuit aces A8o (99%) through AKo (A7o 5%),
+  // KJo (98%), KQo, QJo (1%). Everything else folds.
+  const RAISE = {
+    AA: 100, KK: 100, QQ: 100, JJ: 100, TT: 100, 99: 100, 88: 100, 77: 100,
+    66: 100, 55: 100, 44: 84,
+    AKs: 100, AQs: 100, AJs: 100, ATs: 100, A9s: 100, A8s: 100, A7s: 100,
+    A6s: 100, A5s: 100, A4s: 99, A3s: 27, A2s: 3,
+    KQs: 100, KJs: 100, KTs: 100, K9s: 46,
+    QJs: 100, QTs: 99, JTs: 98,
+    AKo: 100, AQo: 100, AJo: 100, ATo: 100, A9o: 100, A8o: 99, A7o: 5,
+    KQo: 100, KJo: 98, QJo: 1
+  };
+
+  const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+  const grid = document.getElementById('grid');
+  const detail = document.getElementById('detail');
+
+  function handLabel(i, j) {
+    if (i === j) return RANKS[i] + RANKS[j];
+    if (i < j) return RANKS[i] + RANKS[j] + 's';
+    // Below the diagonal: higher rank first, e.g. row K / col A is AKo, not KAo.
+    return RANKS[j] + RANKS[i] + 'o';
+  }
+  function combos(label) {
+    if (label.length === 2) return 6;
+    return label.endsWith('s') ? 4 : 12;
+  }
+
+  // Axis header row.
+  grid.appendChild(document.createElement('span'));
+  RANKS.forEach(function (r) {
+    const a = document.createElement('span');
+    a.className = 'axis';
+    a.textContent = r;
+    grid.appendChild(a);
+  });
+
+  let selected = null;
+  RANKS.forEach(function (rowRank, i) {
+    const axis = document.createElement('span');
+    axis.className = 'axis';
+    axis.textContent = rowRank;
+    grid.appendChild(axis);
+    RANKS.forEach(function (_colRank, j) {
+      const label = handLabel(i, j);
+      const freq = RAISE[label] || 0;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell ' + (freq === 100 ? 'raise' : freq === 0 ? 'fold' : 'mixed');
+      btn.setAttribute('role', 'gridcell');
+      btn.innerHTML = label + (freq > 0 && freq < 100 ? '<small>' + freq + '%</small>' : '');
+      btn.addEventListener('click', function () {
+        if (selected) selected.classList.remove('selected');
+        selected = btn;
+        btn.classList.add('selected');
+        if (freq === 100) {
+          detail.textContent = label + ' — Raise 100% to 2.5bb.';
+        } else if (freq === 0) {
+          detail.textContent = label + ' — Fold 100%.';
+        } else {
+          detail.textContent = label + ' — Raise ' + freq + '% / Fold ' + (100 - freq) + '%.';
+        }
+      });
+      grid.appendChild(btn);
+    });
+  });
+
+  // Recompute the headline from the grid data so it cannot drift from the chart.
+  let raiseCombos = 0;
+  Object.keys(RAISE).forEach(function (label) {
+    raiseCombos += RAISE[label] / 100 * combos(label);
+  });
+  const raisePct = raiseCombos / 1326 * 100;
+  document.getElementById('stats').innerHTML =
+    'Raise <strong>' + raisePct.toFixed(1) + '%</strong> &middot; Fold <strong>' +
+    (100 - raisePct).toFixed(1) + '%</strong> &middot; Raise to 2.5bb';
+</script>
+</body>
+</html>
