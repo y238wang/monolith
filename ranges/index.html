@@ -78,6 +78,7 @@
   .cell.allin { background: var(--allin); color: var(--allin-text); }
   .cell.limp { background: var(--limp); color: var(--limp-text); }
   .cell.fold { background: var(--fold); color: var(--fold-text); }
+  .cell.mixed { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8), 0 0 2px rgba(0,0,0,.7); }
   .cell.notrange {
     background: repeating-linear-gradient(45deg, #f4f4f4, #f4f4f4 3px, #e4e4e4 3px, #e4e4e4 4px);
     color: #aaa;
@@ -175,6 +176,8 @@
     <div class="grid" id="grid" role="grid" aria-label="Preflop range"></div>
   </div>
 
+  <div class="legend" id="legend"></div>
+
   <p class="row-label">Your seat</p>
   <div class="pos-buttons" id="hero-buttons" role="radiogroup" aria-label="Your seat"></div>
 
@@ -183,8 +186,6 @@
 
   <p class="row-label" id="third-label">Against</p>
   <div class="pos-buttons" id="third-buttons" role="radiogroup" aria-label="Against"></div>
-
-  <div class="legend" id="legend"></div>
 
   <p id="detail">Tap a hand to see its action.</p>
 
@@ -209,6 +210,7 @@
   ];
   var RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
   var ACTION_CLASS = { f: 'fold', c: 'call', l: 'limp', r: 'raise', a: 'allin' };
+  var ACTION_COLORS = { f: '#efefef', c: '#2563eb', l: '#0f766e', r: '#1e7a3c', a: '#6d28d9' };
 
   var state = { hero: 'UTG', sit: 'open', third: null };
 
@@ -262,6 +264,33 @@
     var opts = validThirds(state.hero, state.sit);
     var ok = opts.some(function (o) { return o.key === state.third; });
     state.third = opts.length ? (ok ? state.third : opts[0].key) : null;
+  }
+
+  // Situations with at least one chart for this seat, in row order.
+  // Open has no third row, so it is valid for every seat except BB.
+  function validSituations(hero) {
+    return SITUATIONS.filter(function (s) {
+      if (s.id === 'open') return hero !== 'BB';
+      return validThirds(hero, s.id).length > 0;
+    }).map(function (s) { return s.id; });
+  }
+
+  function ensureValidSituation() {
+    var valid = validSituations(state.hero);
+    if (valid.indexOf(state.sit) === -1) state.sit = valid[0];
+  }
+
+  // Background for a mixed cell: hard-stop segments proportional to each
+  // action's share, in legend order.
+  function gradientFor(parts) {
+    var stops = [], acc = 0;
+    parts.forEach(function (p) {
+      var color = ACTION_COLORS[p.letter];
+      stops.push(color + ' ' + acc + '%');
+      acc += p.pct;
+      stops.push(color + ' ' + acc + '%');
+    });
+    return 'linear-gradient(90deg,' + stops.join(',') + ')';
   }
 
   function handLabel(i, j) {
@@ -344,6 +373,7 @@
   }
 
   function render() {
+    ensureValidSituation();
     ensureValidThird();
     var chart = BY_ID[spotIdFor(state)];
     headingEl.textContent = headingFor(chart);
@@ -388,7 +418,12 @@
         } else {
           var dom = parts[0];
           parts.forEach(function (p) { if (p.pct > dom.pct) dom = p; });
-          btn.className = 'cell ' + ACTION_CLASS[dom.letter];
+          if (parts.length > 1) {
+            btn.className = 'cell mixed';
+            btn.style.background = gradientFor(parts);
+          } else {
+            btn.className = 'cell ' + ACTION_CLASS[dom.letter];
+          }
           var lab = document.createElement('span');
           lab.textContent = label;
           btn.appendChild(lab);
@@ -434,19 +469,16 @@
   }
 
   function renderSelectors(chart) {
-    // Hero row: disable seats with no chart in this situation.
-    var heroValid = {};
-    SITUATIONS.forEach(function () {});
-    POSITIONS.forEach(function (p) {
-      heroValid[p] = validThirds(p, state.sit).length > 0 || state.sit === 'open';
-    });
-    if (state.sit === 'open') heroValid['BB'] = false;
+    // Seat buttons are never disabled; situation buttons are disabled
+    // when the seat has no chart in that situation.
+    var validSits = validSituations(state.hero);
     Array.prototype.forEach.call(heroEl.children, function (b) {
       b.setAttribute('aria-checked', b.dataset.value === state.hero ? 'true' : 'false');
-      b.disabled = !heroValid[b.dataset.value];
+      b.disabled = false;
     });
     Array.prototype.forEach.call(sitEl.children, function (b) {
       b.setAttribute('aria-checked', b.dataset.value === state.sit ? 'true' : 'false');
+      b.disabled = validSits.indexOf(b.dataset.value) === -1;
     });
     thirdLabelEl.textContent = thirdLabel(state.sit);
     thirdEl.innerHTML = '';
