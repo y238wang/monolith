@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ranges — UTG</title>
+<title>Ranges</title>
 <style>
   :root {
     --raise: #1e7a3c;
     --raise-text: #fff;
+    --call: #2563eb;
+    --call-text: #fff;
     --fold: #efefef;
     --fold-text: #8a8a8a;
-    --mixed: #fde9a8;
-    --mixed-text: #3a2e00;
     --ink: #222;
     --muted: #666;
   }
@@ -32,7 +32,7 @@
   }
   h1 { font-size: 26px; margin: 0; line-height: 1.2; }
   .subtitle { color: var(--muted); font-size: 15px; text-align: center; margin: -6px 0 0; }
-  .stats { font-size: 15px; text-align: center; }
+  .stats { font-size: 15px; text-align: center; margin: 0; }
   .stats strong { font-weight: 700; }
   .grid-wrap { width: min(94vw, 520px); }
   .grid {
@@ -67,11 +67,39 @@
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .cell small { font-size: 8.5px; font-weight: 700; }
   .cell.raise { background: var(--raise); color: var(--raise-text); }
+  .cell.call { background: var(--call); color: var(--call-text); }
   .cell.fold { background: var(--fold); color: var(--fold-text); }
-  .cell.mixed { background: var(--mixed); color: var(--mixed-text); }
   .cell.selected { outline: 3px solid #111; outline-offset: -1px; }
+  .pos-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: min(94vw, 520px);
+  }
+  .pos-btn {
+    flex: 1 1 0;
+    min-width: 52px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 9px 4px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pos-btn[aria-checked="true"] {
+    background: #222;
+    border-color: #222;
+    color: #fff;
+  }
   .legend {
     display: flex;
     gap: 14px;
@@ -87,12 +115,13 @@
     display: inline-block;
   }
   .swatch.raise { background: var(--raise); }
+  .swatch.call { background: var(--call); }
   .swatch.fold { background: var(--fold); border: 1px solid #ddd; }
-  .swatch.mixed { background: var(--mixed); }
   #detail {
     min-height: 22px;
     font-size: 16px;
     text-align: center;
+    margin: 0;
   }
   .notes {
     width: min(94vw, 520px);
@@ -104,47 +133,108 @@
 </style>
 </head>
 <body>
-  <h1>UTG</h1>
-  <p class="subtitle">Raise first in &middot; 100bb &middot; 6-max cash</p>
-  <p class="stats" id="stats">Raise <strong>17.2%</strong> &middot; Fold <strong>82.8%</strong> &middot; Raise to 2.5bb</p>
+  <h1 id="heading">UTG</h1>
+  <p class="subtitle" id="subtitle">Raise first in &middot; 100bb &middot; 6-max cash</p>
+  <p class="stats" id="stats"></p>
 
   <div class="grid-wrap">
-    <div class="grid" id="grid" role="grid" aria-label="UTG opening range"></div>
+    <div class="grid" id="grid" role="grid" aria-label="Preflop range"></div>
   </div>
 
-  <div class="legend">
-    <span><i class="swatch raise"></i>Raise</span>
-    <span><i class="swatch mixed"></i>Mixed (% = raise)</span>
-    <span><i class="swatch fold"></i>Fold</span>
-  </div>
+  <div class="pos-buttons" id="pos-buttons" role="radiogroup" aria-label="Position"></div>
+
+  <div class="legend" id="legend"></div>
 
   <p id="detail">Tap a hand to see its action.</p>
 
   <div class="notes">
-    <p><strong>Raise:</strong> 44+, A4s+, KTs+, QTs+, JTs, A8o+, KJo, KQo. Mixed hands are marked with their raise frequency in the grid.</p>
-    <p>First in only — everyone before UTG has folded. No limping. Solver: open-source CFR (preflop-cfr+), no rake. Other solvers differ by a few boundary hands (e.g. 22–33, 98s, T9s) depending on rake and assumptions.</p>
+    <p>UTG, HJ, CO and BTN are raise-first-in ranges (everyone before has folded, no limping). SB is raise-first-in to a larger size. BB never opens: its chart is the defense against a BTN 2.5bb open.</p>
+    <p>Source: GTO-flavoured baselines in the jameswu5/Poker guide, Ch. 4 (open raises) and Ch. 5 (BB vs BTN). Pure actions only — solver mixes are rounded off. This replaces the earlier UTG-only chart (Tiger Poker no-rake solve), which folded 22–33 and opened A9o/A8o; the UTG range here folds A9o and opens 22+.</p>
   </div>
 
 <script>
-  // Raise frequency (%) for each hand. Hands not listed fold 100%.
-  // Source: Tiger Poker UTG first-in solve, 6-max cash, 100bb, raise 2.5bb, no rake.
-  // Pairs 44 (84%) through AA, suited aces A4s (99%) through AKs, KTs+ (K9s 46%),
-  // QTs+ (QTs 99%), JTs (98%), offsuit aces A8o (99%) through AKo (A7o 5%),
-  // KJo (98%), KQo, QJo (1%). Everything else folds.
-  const RAISE = {
-    AA: 100, KK: 100, QQ: 100, JJ: 100, TT: 100, 99: 100, 88: 100, 77: 100,
-    66: 100, 55: 100, 44: 84,
-    AKs: 100, AQs: 100, AJs: 100, ATs: 100, A9s: 100, A8s: 100, A7s: 100,
-    A6s: 100, A5s: 100, A4s: 99, A3s: 27, A2s: 3,
-    KQs: 100, KJs: 100, KTs: 100, K9s: 46,
-    QJs: 100, QTs: 99, JTs: 98,
-    AKo: 100, AQo: 100, AJo: 100, ATo: 100, A9o: 100, A8o: 99, A7o: 5,
-    KQo: 100, KJo: 98, QJo: 1
-  };
+  // Grids are 13 rows (high card A..2) x 13 cols (low card A..2).
+  // Master grid (Ch. 4.3): U = open from UTG on, H = from HJ on,
+  // C = from CO on, B = BTN only, . = fold even on BTN.
+  var MASTER = [
+    'UUUUUUUUUUUUU',
+    'UUUUUUCCBBBBB',
+    'UUUUUUCBBBB..',
+    'UHHUUUCB.....',
+    'HCCCUUHB.....',
+    'CBBBBUUHB....',
+    'CB...BUUHB...',
+    'B......UUH...',
+    'B.......UUC..',
+    'B........UUB.',
+    'B.........UC.',
+    'B..........U.',
+    'B...........U'
+  ];
+  // SB raise-first-in grid (Ch. 4.4): R = raise, . = fold.
+  var SB_GRID = [
+    'RRRRRRRRRRRRR',
+    'RRRRRRRRRRRRR',
+    'RRRRRRRRRRR..',
+    'RRRRRRRRR....',
+    'RRRRRRRRR....',
+    'RRRRRRRRR....',
+    'RRRRRRRRRR...',
+    'RR...RRRRRR..',
+    'R.......RRR..',
+    'R........RRR.',
+    'R.........RR.',
+    'R..........R.',
+    'R...........R'
+  ];
+  // BB vs BTN open grid (Ch. 5.5): 3 = 3-bet, C = call, . = fold.
+  var BB_GRID = [
+    '3333CCCCC3333',
+    '33CCCCCCCCCCC',
+    '3C3CCCCCCCC..',
+    'CCC3CCCCC....',
+    'CCCC3CCCC....',
+    'CCCCCCCCC....',
+    'CCCCCCCCCC...',
+    'CC...CCC3CC..',
+    'C.......C3C..',
+    'C........CCC.',
+    'C.........CC.',
+    'C..........C.',
+    'C...........C'
+  ];
 
-  const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-  const grid = document.getElementById('grid');
-  const detail = document.getElementById('detail');
+  var POSITIONS = [
+    { code: 'UTG', name: 'Under the Gun', mode: 'rfi', size: '2.5bb',
+      subtitle: 'Raise first in \u00b7 100bb \u00b7 6-max cash',
+      tiers: ['U'] },
+    { code: 'HJ', name: 'Hijack', mode: 'rfi', size: '2.5bb',
+      subtitle: 'Raise first in \u00b7 100bb \u00b7 6-max cash',
+      tiers: ['U', 'H'] },
+    { code: 'CO', name: 'Cutoff', mode: 'rfi', size: '2.5bb',
+      subtitle: 'Raise first in \u00b7 100bb \u00b7 6-max cash',
+      tiers: ['U', 'H', 'C'] },
+    { code: 'BTN', name: 'Button', mode: 'rfi', size: '2.5bb',
+      subtitle: 'Raise first in \u00b7 100bb \u00b7 6-max cash',
+      tiers: ['U', 'H', 'C', 'B'] },
+    { code: 'SB', name: 'Small Blind', mode: 'rfi', size: '3bb',
+      subtitle: 'Raise first in \u00b7 100bb \u00b7 6-max cash',
+      grid: SB_GRID },
+    { code: 'BB', name: 'Big Blind', mode: 'defense', size: '10bb',
+      subtitle: 'vs BTN open 2.5bb \u00b7 100bb \u00b7 6-max cash',
+      grid: BB_GRID }
+  ];
+
+  var RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+  var gridEl = document.getElementById('grid');
+  var detailEl = document.getElementById('detail');
+  var headingEl = document.getElementById('heading');
+  var subtitleEl = document.getElementById('subtitle');
+  var statsEl = document.getElementById('stats');
+  var legendEl = document.getElementById('legend');
+  var buttonsEl = document.getElementById('pos-buttons');
+  var current = 'UTG';
+  var selectedCell = null;
 
   function handLabel(i, j) {
     if (i === j) return RANKS[i] + RANKS[j];
@@ -152,59 +242,107 @@
     // Below the diagonal: higher rank first, e.g. row K / col A is AKo, not KAo.
     return RANKS[j] + RANKS[i] + 'o';
   }
-  function combos(label) {
-    if (label.length === 2) return 6;
-    return label.endsWith('s') ? 4 : 12;
+  function combosFor(i, j) {
+    if (i === j) return 6;
+    return i < j ? 4 : 12;
+  }
+  function actionFor(pos, i, j) {
+    var ch;
+    if (pos.mode === 'rfi' && pos.tiers) {
+      ch = MASTER[i][j];
+      return pos.tiers.indexOf(ch) !== -1 ? 'raise' : 'fold';
+    }
+    ch = pos.grid[i][j];
+    if (pos.mode === 'rfi') return ch === 'R' ? 'raise' : 'fold';
+    return ch === '3' ? 'threebet' : ch === 'C' ? 'call' : 'fold';
+  }
+  function detailText(pos, label, action) {
+    if (action === 'raise') return label + ' \u2014 Raise to ' + pos.size + '.';
+    if (action === 'threebet') return label + ' \u2014 3-bet to ' + pos.size + '.';
+    if (action === 'call') return label + ' \u2014 Call.';
+    return label + ' \u2014 Fold.';
   }
 
-  // Axis header row.
-  grid.appendChild(document.createElement('span'));
-  RANKS.forEach(function (r) {
-    const a = document.createElement('span');
-    a.className = 'axis';
-    a.textContent = r;
-    grid.appendChild(a);
-  });
+  function render(posCode) {
+    current = posCode;
+    var pos = null;
+    POSITIONS.forEach(function (p) { if (p.code === posCode) pos = p; });
 
-  let selected = null;
-  RANKS.forEach(function (rowRank, i) {
-    const axis = document.createElement('span');
-    axis.className = 'axis';
-    axis.textContent = rowRank;
-    grid.appendChild(axis);
-    RANKS.forEach(function (_colRank, j) {
-      const label = handLabel(i, j);
-      const freq = RAISE[label] || 0;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cell ' + (freq === 100 ? 'raise' : freq === 0 ? 'fold' : 'mixed');
-      btn.setAttribute('role', 'gridcell');
-      btn.innerHTML = label + (freq > 0 && freq < 100 ? '<small>' + freq + '%</small>' : '');
-      btn.addEventListener('click', function () {
-        if (selected) selected.classList.remove('selected');
-        selected = btn;
-        btn.classList.add('selected');
-        if (freq === 100) {
-          detail.textContent = label + ' — Raise 100% to 2.5bb.';
-        } else if (freq === 0) {
-          detail.textContent = label + ' — Fold 100%.';
-        } else {
-          detail.textContent = label + ' — Raise ' + freq + '% / Fold ' + (100 - freq) + '%.';
-        }
-      });
-      grid.appendChild(btn);
+    headingEl.textContent = pos.code;
+    subtitleEl.textContent = pos.subtitle;
+    document.title = 'Ranges \u2014 ' + pos.code;
+    gridEl.setAttribute('aria-label', pos.name + ' range');
+    detailEl.textContent = 'Tap a hand to see its action.';
+    selectedCell = null;
+
+    // Rebuild grid.
+    gridEl.innerHTML = '';
+    gridEl.appendChild(document.createElement('span'));
+    RANKS.forEach(function (r) {
+      var a = document.createElement('span');
+      a.className = 'axis';
+      a.textContent = r;
+      gridEl.appendChild(a);
     });
+
+    var counts = { raise: 0, threebet: 0, call: 0, fold: 0 };
+    RANKS.forEach(function (rowRank, i) {
+      var axis = document.createElement('span');
+      axis.className = 'axis';
+      axis.textContent = rowRank;
+      gridEl.appendChild(axis);
+      RANKS.forEach(function (_colRank, j) {
+        var label = handLabel(i, j);
+        var action = actionFor(pos, i, j);
+        counts[action] += combosFor(i, j);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cell ' + action;
+        btn.setAttribute('role', 'gridcell');
+        btn.textContent = label;
+        btn.addEventListener('click', function () {
+          if (selectedCell) selectedCell.classList.remove('selected');
+          selectedCell = btn;
+          btn.classList.add('selected');
+          detailEl.textContent = detailText(pos, label, action);
+        });
+        gridEl.appendChild(btn);
+      });
+    });
+
+    // Stats, computed from the grid so they cannot drift from the chart.
+    function pct(n) { return (n / 1326 * 100).toFixed(1); }
+    if (pos.mode === 'rfi') {
+      statsEl.innerHTML = 'Raise <strong>' + pct(counts.raise) + '%</strong> &middot; Fold <strong>' +
+        pct(counts.fold) + '%</strong> &middot; Raise to ' + pos.size;
+      legendEl.innerHTML = '<span><i class="swatch raise"></i>Raise</span>' +
+        '<span><i class="swatch fold"></i>Fold</span>';
+    } else {
+      statsEl.innerHTML = '3-bet <strong>' + pct(counts.threebet) + '%</strong> &middot; Call <strong>' +
+        pct(counts.call) + '%</strong> &middot; Fold <strong>' + pct(counts.fold) + '%</strong>';
+      legendEl.innerHTML = '<span><i class="swatch raise"></i>3-bet to ' + pos.size + '</span>' +
+        '<span><i class="swatch call"></i>Call</span>' +
+        '<span><i class="swatch fold"></i>Fold</span>';
+    }
+
+    // Toggle buttons: exactly one selected.
+    Array.prototype.forEach.call(buttonsEl.children, function (b) {
+      b.setAttribute('aria-checked', b.dataset.pos === posCode ? 'true' : 'false');
+    });
+  }
+
+  POSITIONS.forEach(function (pos) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pos-btn';
+    b.setAttribute('role', 'radio');
+    b.dataset.pos = pos.code;
+    b.textContent = pos.code;
+    b.addEventListener('click', function () { render(pos.code); });
+    buttonsEl.appendChild(b);
   });
 
-  // Recompute the headline from the grid data so it cannot drift from the chart.
-  let raiseCombos = 0;
-  Object.keys(RAISE).forEach(function (label) {
-    raiseCombos += RAISE[label] / 100 * combos(label);
-  });
-  const raisePct = raiseCombos / 1326 * 100;
-  document.getElementById('stats').innerHTML =
-    'Raise <strong>' + raisePct.toFixed(1) + '%</strong> &middot; Fold <strong>' +
-    (100 - raisePct).toFixed(1) + '%</strong> &middot; Raise to 2.5bb';
+  render('UTG');
 </script>
 </body>
 </html>
